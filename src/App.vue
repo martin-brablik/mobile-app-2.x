@@ -9,7 +9,7 @@
 <script lang="ts">
 
 import { IonApp, IonRouterOutlet } from '@ionic/vue';
-import { defineComponent, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, defineComponent, onBeforeUnmount, onMounted, ref } from 'vue';
 import { App } from '@capacitor/app';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 import Biometrics from '@/components/Biometrics.vue';
@@ -17,6 +17,8 @@ import Menu from '@/components/Menu.vue';
 import { useRoute } from 'vue-router';
 import { ScreenOrientation } from '@awesome-cordova-plugins/screen-orientation';
 import router from './router';
+import { globals } from './globals';
+import store from './store';
 
 export default defineComponent({
   name: 'App',
@@ -32,6 +34,9 @@ export default defineComponent({
     const currentRoute = route.path;
 
     onMounted(() => {
+      globals.appUrl = `https://www.izus.${navigator.language == 'sk' ? 'sk' : 'cz'}/`;
+      console.log(globals.appUrl);
+
       ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
 
       if(biometricsRef.value !== null) {

@@ -56,6 +56,7 @@ const en = {
     "hide": "Hide",
     "show": "Show",
     "password_lower": "password",
+    "did_you_know": "Did you know..."
 }
 
 export default en;

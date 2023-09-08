@@ -8,8 +8,8 @@
         <div class="loading">
           <ion-img class="ion-padding" :src="iZUS_pruhl" />
           <div class="lds-dual-ring"></div>
-          <article class="tip ion-padding">
-            <h3>Víte že...</h3>
+          <article v-if="localeRef == 'cs' || localeRef == 'sk'" class="tip ion-padding">
+            <h4 ref="didYouKnowHeadingRef"></h4>
             <p> {{ loadingTipRef }}</p>
           </article>
         </div>
@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 
-import { IonContent, IonPage, IonModal, IonImg, onIonViewWillEnter, useIonRouter } from '@ionic/vue';
+import { IonContent, IonPage, IonModal, IonImg, onIonViewWillEnter, useIonRouter, onIonViewDidEnter } from '@ionic/vue';
 import { Ref, ref, onMounted, computed } from 'vue';
 import { SHA1, MD5 } from 'crypto-js';
 import { App } from '@capacitor/app';
@@ -28,6 +28,7 @@ import store from '@/store';
 import { useRoute } from 'vue-router';
 import { globals } from '@/globals';
 import iZUS_pruhl from '@/assets/images/iZUS_pruhl.png';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
   login: {
@@ -38,6 +39,7 @@ const props = defineProps({
 
 const router = useIonRouter();
 const route = useRoute();
+const { tm } = useI18n();
 
 let tips : any;
 
@@ -50,8 +52,10 @@ const isSignedInRef = ref(computed(() => store.getters.getIsSignedIn).value);
 const authTriedRef = ref(false);
 const isLoadingRef = ref();
 const loadingTipRef = ref();
+const localeRef = ref(computed(() => store.getters.getLanguage).value);
+const didYouKnowHeadingRef : Ref<HTMLElement | undefined> = ref();
 
-onMounted(async () => {
+onMounted(() => {
   izusRef.value.addEventListener('load', () => {
     izusRef.value.contentWindow?.postMessage({ setCookie: true }, '*');
   });
@@ -65,17 +69,18 @@ onMounted(async () => {
   App.addListener('backButton', () => {
     izusRef.value?.contentWindow?.history.back();
   });
-
-  await fetchTips().then(getRandomTip);
 });
 
 onIonViewWillEnter(() => {
+  console.log('entering');
   authTriedRef.value = false;
   reactiveUrlRef.value = computed(() => store.getters.getUrl).value;
   isSignedInRef. value = computed(() => store.getters.getIsSignedIn).value;
   usernameRef.value = computed(() => store.getters.getUsername).value;
   passwordRef.value = computed(() => store.getters.getPassword).value;
   reactiveUrlRef.value = computed(() => store.getters.getUrl).value;
+  localeRef.value = computed(() => store.getters.getLanguage).value;
+  console.log(localeRef.value);
 
   if(reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signOut();
@@ -85,12 +90,17 @@ onIonViewWillEnter(() => {
     isLoadingRef.value = true;
     setTimeout(() => {
       if(isLoadingRef.value) {
-        isLoadingRef.value = true;
+        isLoadingRef.value = false;
         signOut('messageException');
       }
     }, 10000);
     signIn();
   }
+});
+
+onIonViewDidEnter(async () => {
+  await fetchTips();
+  getRandomTip();
 });
 
 const getSignInPost = () => {
@@ -161,7 +171,7 @@ const handleMessage = (event: MessageEvent) => {
 
 const fetchTips = async () => {
   try {
-    const response = await fetch('http://localhost/ws/vite_ze');
+    const response = await fetch(globals.appUrl + '/ws/vite_ze');
     console.log(response);
     tips = await response.json();
   }
@@ -171,9 +181,18 @@ const fetchTips = async () => {
 }
 
 const getRandomTip = () => {
-  const index = Math.floor(Math.random() * tips.length);
-  console.log(tips[index].nadpis);
-  loadingTipRef.value = tips[index].nadpis;
+  try {
+    const index = Math.floor(Math.random() * tips.length);
+    console.log(tips[index].nadpis);
+    loadingTipRef.value = tips[index].nadpis;
+
+    if(didYouKnowHeadingRef != undefined && didYouKnowHeadingRef.value != undefined) {
+      didYouKnowHeadingRef.value.innerText = tm('did_you_know').toString();
+    }
+  }
+  catch(error) {
+    console.log('tips not loaded yet');
+  }
 }
 
 </script>
@@ -200,6 +219,7 @@ ion-modal {
   display: inline-block;
   width: 48px;
   height: 48px;
+  transform: translateX(-25%);
 }
 
 .lds-dual-ring:after {
@@ -240,6 +260,9 @@ ion-modal {
 
 article {
   text-align: center;
+  margin-top: 1em;
+  position: absolute;
+  bottom: 0;
 }
 
 </style>

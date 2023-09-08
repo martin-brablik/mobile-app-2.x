@@ -56,6 +56,7 @@ const ua = {
     "hide": "приховати",
     "show": "дисплей",
     "password_lower": "пароль",
+    "did_you_know": "Ти це знаєш..."
 }
 
 export default ua;
