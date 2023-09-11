@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true">
+    <ion-content :fullscreen="true" :scroll-y="false">
       <div class="viewport" :style="{backgroundImage: 'url(' + bg_login +')'}">
         <div class="container">
           <ion-img :src="iZUS_pruhl" alt="logo" />
