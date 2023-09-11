@@ -54,6 +54,7 @@ const isLoadingRef = ref();
 const loadingTipRef = ref();
 const localeRef = ref(computed(() => store.getters.getLanguage).value);
 const didYouKnowHeadingRef : Ref<HTMLElement | undefined> = ref();
+const isLoadingPausedRef = ref(false);
 
 onMounted(() => {
   izusRef.value.addEventListener('load', () => {
@@ -80,7 +81,6 @@ onIonViewWillEnter(() => {
   passwordRef.value = computed(() => store.getters.getPassword).value;
   reactiveUrlRef.value = computed(() => store.getters.getUrl).value;
   localeRef.value = computed(() => store.getters.getLanguage).value;
-  console.log(localeRef.value);
 
   if(reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signOut();
