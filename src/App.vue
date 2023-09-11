@@ -34,7 +34,7 @@ export default defineComponent({
     const currentRoute = route.path;
 
     onMounted(() => {
-      globals.appUrl = `https://www.izus.${navigator.language == 'sk' ? 'sk' : 'cz'}/`;
+      //globals.appUrl = `https://www.izus.${navigator.language == 'sk' ? 'sk' : 'cz'}/`;
       console.log(globals.appUrl);
 
       ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
