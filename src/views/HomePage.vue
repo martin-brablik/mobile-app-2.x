@@ -22,7 +22,7 @@
 
 import { IonContent, IonPage, IonModal, IonImg, onIonViewWillEnter, useIonRouter, onIonViewDidEnter } from '@ionic/vue';
 import { Ref, ref, onMounted, computed } from 'vue';
-import { SHA1, MD5 } from 'crypto-js';
+import { SHA1, MD5, enc } from 'crypto-js';
 import { App } from '@capacitor/app';
 import store from '@/store';
 import { useRoute } from 'vue-router';
@@ -107,7 +107,7 @@ const getSignInPost = () => {
   const username = usernameRef.value;
   const password = passwordRef.value;
   const sugar = Math.floor(Math.random() * 900000) + 100000;
-  const password_hmac = SHA1(MD5(password + username).toString().toLowerCase() + sugar).toString().toLowerCase();
+  const password_hmac = SHA1(MD5(enc.Latin1.parse(password + username)).toString().toLocaleLowerCase('sk-SK') + sugar).toString().toLocaleLowerCase('sk-SK');
   const postData = { sugar: sugar, password_hmac: password_hmac, username: username, prepassword: 'Heslo' };
 
   return postData;
@@ -128,7 +128,7 @@ const signIn = () => {
 
   if (!authTriedRef.value) {
     izusRef.value.addEventListener('load', () => {
-      sendLoginRequest();
+      setTimeout(sendLoginRequest, 100);
     });
   }
 };
