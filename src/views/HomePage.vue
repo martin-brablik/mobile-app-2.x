@@ -78,7 +78,6 @@ onMounted(() => {
 });
 
 onIonViewWillEnter(() => {
-  console.log('entering');
   authTriedRef.value = false;
   reactiveUrlRef.value = computed(() => store.getters.getUrl).value;
   isSignedInRef. value = computed(() => store.getters.getIsSignedIn).value;
@@ -147,8 +146,6 @@ const signIn = () => {
 const signOut = (error: string = 'none') => {
   store.dispatch('updateIsSignedIn', false);
   store.dispatch('updateUrl', globals.appUrl + globals.logoutQuery);
-  store.dispatch('updateUsername', '');
-  store.dispatch('updatePassword', '');
   reactiveUrlRef.value = globals.appUrl + globals.logoutQuery;
   router.push({ name: 'login', params: { error: error } });
 };
