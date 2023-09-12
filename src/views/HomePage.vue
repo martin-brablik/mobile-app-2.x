@@ -4,7 +4,7 @@
       <div style="height: 100%; width: 100%;">
         <iframe class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
       </div>
-      <ion-modal :is-open="false" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
+      <ion-modal :is-open="isLoadingOpenRef" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
         <div class="loading">
           <ion-img class="ion-padding" :src="iZUS_pruhl" />
           <div class="lds-dual-ring">
@@ -94,7 +94,7 @@ onIonViewWillEnter(() => {
   if(route.params.login == 'true' && !isSignedInRef.value) {
     isLoadingOpenRef.value = true;
     isLoadingRef.value = true;
-    /*setTimeout(() => {
+    setTimeout(() => {
       if(isLoadingRef.value) {
         isLoadingRef.value = false;
 
@@ -104,7 +104,7 @@ onIonViewWillEnter(() => {
 
         signOut('messageException');
       }
-    }, 10000);*/
+    }, 10000);
     signIn();
   }
 });
