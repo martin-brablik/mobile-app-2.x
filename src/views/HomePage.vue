@@ -251,7 +251,6 @@ ion-modal {
   display: inline-block;
   width: 64px;
   height: 64px;
-  transform: translateX(-25%);
 }
 
 .lds-dual-ring-symbol {
