@@ -4,7 +4,7 @@
       <div style="height: 100%; width: 100%;">
         <iframe class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
       </div>
-      <ion-modal :is-open="isLoadingOpenRef" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
+      <ion-modal :is-open="false" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
         <div class="loading">
           <ion-img class="ion-padding" :src="iZUS_pruhl" />
           <div class="lds-dual-ring">
@@ -45,6 +45,7 @@ const route = useRoute();
 const { tm } = useI18n();
 
 let tips : any;
+let loginAttempt = 1;
 
 const izusRef: Ref<HTMLIFrameElement | undefined | any> = ref();
 const reactiveUrlRef = ref(computed(() => store.getters.getUrl).value);
@@ -93,7 +94,7 @@ onIonViewWillEnter(() => {
   if(route.params.login == 'true' && !isSignedInRef.value) {
     isLoadingOpenRef.value = true;
     isLoadingRef.value = true;
-    setTimeout(() => {
+    /*setTimeout(() => {
       if(isLoadingRef.value) {
         isLoadingRef.value = false;
 
@@ -103,7 +104,7 @@ onIonViewWillEnter(() => {
 
         signOut('messageException');
       }
-    }, 10000);
+    }, 10000);*/
     signIn();
   }
 });
@@ -161,6 +162,10 @@ const handleMessage = (event: MessageEvent) => {
     authTriedRef.value = true;
 
     if(event.data.loginResult !== 'ok') {
+      if((event.data.loginResult === 'messageException' || event.data.loginResult === 'pdoException') && loginAttempt < 2) {
+        loginAttempt++;
+        signIn();
+      }
       store.dispatch('updateIsSignedIn', false);
       router.push({ name: 'login', params: { error: event.data.loginResult } });
     }
