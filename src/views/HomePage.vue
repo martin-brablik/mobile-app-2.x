@@ -4,13 +4,16 @@
       <div style="height: 100%; width: 100%;">
         <iframe class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
       </div>
-      <ion-modal :is-open="isLoadingRef" :fullscreen="true" @willPresent="getRandomTip();">
+      <ion-modal :is-open="isLoadingOpenRef" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
         <div class="loading">
           <ion-img class="ion-padding" :src="iZUS_pruhl" />
-          <div class="lds-dual-ring"></div>
+          <div class="lds-dual-ring">
+            <div ref="ringRef" class="lds-dual-ring-symbol"></div>
+          </div>
           <article v-if="localeRef == 'cs' || localeRef == 'sk'" class="tip ion-padding">
-            <h4 ref="didYouKnowHeadingRef"></h4>
-            <p> {{ loadingTipRef }}</p>
+            <h4 ref="didYouKnowHeadingRef">{{ $tm('did_you_know').toString() }}</h4>
+            <p> {{ loadingTipRef.nadpis }}</p>
+            <p v-if="isLoadingPausedRef">{{ loadingTipRef.text }}</p>
           </article>
         </div>
       </ion-modal>
@@ -51,10 +54,12 @@ const passwordRef = ref(computed(() => store.getters.getPassword).value);
 const isSignedInRef = ref(computed(() => store.getters.getIsSignedIn).value);
 const authTriedRef = ref(false);
 const isLoadingRef = ref();
+const isLoadingOpenRef = ref();
 const loadingTipRef = ref();
 const localeRef = ref(computed(() => store.getters.getLanguage).value);
 const didYouKnowHeadingRef : Ref<HTMLElement | undefined> = ref();
 const isLoadingPausedRef = ref(false);
+const ringRef : Ref<HTMLElement | undefined> = ref();
 
 onMounted(() => {
   izusRef.value.addEventListener('load', () => {
@@ -87,10 +92,16 @@ onIonViewWillEnter(() => {
   }
 
   if(route.params.login == 'true' && !isSignedInRef.value) {
+    isLoadingOpenRef.value = true;
     isLoadingRef.value = true;
     setTimeout(() => {
       if(isLoadingRef.value) {
         isLoadingRef.value = false;
+
+        if(!isLoadingPausedRef.value) {
+          isLoadingOpenRef.value = false;
+        }
+
         signOut('messageException');
       }
     }, 10000);
@@ -145,6 +156,10 @@ const signOut = (error: string = 'none') => {
 const handleMessage = (event: MessageEvent) => {
   isLoadingRef.value = false;
 
+  if(!isLoadingPausedRef.value) {
+    isLoadingOpenRef.value = false;
+  }
+
   if (event.data.loginResult) {
     authTriedRef.value = true;
 
@@ -184,7 +199,7 @@ const getRandomTip = () => {
   try {
     const index = Math.floor(Math.random() * tips.length);
     console.log(tips[index].nadpis);
-    loadingTipRef.value = tips[index].nadpis;
+    loadingTipRef.value = tips[index];
 
     if(didYouKnowHeadingRef != undefined && didYouKnowHeadingRef.value != undefined) {
       didYouKnowHeadingRef.value.innerText = tm('did_you_know').toString();
@@ -192,6 +207,23 @@ const getRandomTip = () => {
   }
   catch(error) {
     console.log('tips not loaded yet');
+  }
+}
+
+const pauseLoading = (value: boolean) => {
+  isLoadingPausedRef.value = value;
+
+  if(ringRef && ringRef.value) {
+    if(value) {
+      ringRef.value.classList.add('lds-dual-ring-symbol-idle');
+     }
+     else {
+      ringRef.value.classList.remove('lds-dual-ring-symbol-idle');
+
+      if(!isLoadingRef.value && isLoadingOpenRef.value) {
+        isLoadingOpenRef.value = false;
+      }
+     }
   }
 }
 
@@ -217,21 +249,25 @@ ion-modal {
 
 .lds-dual-ring {
   display: inline-block;
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   transform: translateX(-25%);
 }
 
-.lds-dual-ring:after {
+.lds-dual-ring-symbol {
   content: " ";
   display: block;
-  width: 48px;
-  height: 48px;
-  margin: 8px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   border: 6px solid #D67E29;
   border-color: #D67E29 transparent #D67E29 transparent;
   animation: lds-dual-ring 1.2s linear infinite;
+  transition: border-color 0.25s linear;
+}
+
+.lds-dual-ring-symbol-idle {
+  border-color: #D67E29;
 }
 
 @keyframes lds-dual-ring {
@@ -241,6 +277,12 @@ ion-modal {
   100% {
     transform: rotate(360deg);
   }
+}
+
+#loading-pause {
+  position: relative;
+  top: 0;
+  right: 0;
 }
 
   .izus {

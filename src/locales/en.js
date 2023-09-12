@@ -56,7 +56,10 @@ const en = {
     "hide": "Hide",
     "show": "Show",
     "password_lower": "password",
-    "did_you_know": "Did you know..."
+    "did_you_know": "Did you know...",
+    "pause_option": "Pause loading on",
+    "click": "Click",
+    "hold": "Hold",
 }
 
 export default en;

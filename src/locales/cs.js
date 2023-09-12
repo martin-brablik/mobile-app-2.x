@@ -56,7 +56,10 @@ const cs = {
     "hide": "Skrýt",
     "show": "Zobrazit",
     "password_lower": "heslo",
-    "did_you_know": "Víte, že..."
+    "did_you_know": "Víte, že...",
+    "pause_option": "Pozastavit načítání",
+    "click": "Kliknutím",
+    "hold": "Podržením",
 }
 
 export default cs;
