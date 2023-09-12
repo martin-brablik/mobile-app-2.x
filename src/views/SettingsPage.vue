@@ -1,7 +1,7 @@
 <template>
     <ion-page>
         <toolbar :pageTitle="$tm('settings').toString()" />
-        <ion-content class="ion-padding" :scroll-y="false">
+        <ion-content class="ion-padding">
             <form @submit.prevent="saveCredentials();">
                 <h3>{{ $tm('general') }}</h3>
                 <ion-select v-model="langOptionRef" @ion-change="saveLanguage()" :label="$tm('language').toString()" label-placement="floating" interface="popover" fill="solid" color="secondary">

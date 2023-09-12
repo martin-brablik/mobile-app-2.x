@@ -45,7 +45,7 @@ export default createStore({
         setAutoLogin(state, autoLogin) {
             state.autoLogin = autoLogin;
             localStorage.setItem('autoLogin', autoLogin);
-        }
+        },
     },
     actions: {
         updateUrl({ commit }, url) {

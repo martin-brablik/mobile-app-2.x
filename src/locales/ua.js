@@ -56,7 +56,10 @@ const ua = {
     "hide": "приховати",
     "show": "дисплей",
     "password_lower": "пароль",
-    "did_you_know": "Ти це знаєш..."
+    "did_you_know": "Ти це знаєш...",
+    "pause_option": "Призупинити завантаження",
+    "click": "Натиснувши",
+    "hold": "Утримуючи",
 }
 
 export default ua;

@@ -56,7 +56,10 @@ const sk = {
     "hide": "Skrýť",
     "show": "Zobraziť",
     "password_lower": "heslo",
-    "did_you_know": "Viete, že..."
+    "did_you_know": "Viete, že...",
+    "pause_option": "Pozastaviť načítanie",
+    "click": "Kliknutím",
+    "hold": "Podržaním",
 }
 
 export default sk;
