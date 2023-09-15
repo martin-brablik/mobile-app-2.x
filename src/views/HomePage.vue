@@ -4,7 +4,7 @@
       <div style="height: 100%; width: 100%;">
         <iframe class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
       </div>
-      <ion-modal :is-open="false" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
+      <ion-modal :is-open="isLoadingOpenRef" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
         <div class="loading">
           <ion-img class="ion-padding" :src="iZUS_pruhl" />
           <div class="lds-dual-ring">
@@ -94,7 +94,7 @@ onIonViewWillEnter(() => {
   if(route.params.login == 'true' && !isSignedInRef.value) {
     isLoadingOpenRef.value = true;
     isLoadingRef.value = true;
-    /*setTimeout(() => {
+    setTimeout(() => {
       if(isLoadingRef.value) {
         isLoadingRef.value = false;
 
@@ -104,7 +104,7 @@ onIonViewWillEnter(() => {
 
         signOut('messageException');
       }
-    }, 10000);*/
+    }, 10000);
     signIn();
   }
 });
@@ -133,12 +133,17 @@ const signIn = () => {
     }
   }
 
-  let url = new URL(izusRef.value.src.toString());
+  /*let url = new URL(izusRef.value.src.toString());
   url.searchParams.append('logout', 'true');
-  izusRef.value.src = url.toString();
+  izusRef.value.src = url.toString();*/
 
   if (!authTriedRef.value) {
     izusRef.value.addEventListener('load', () => {
+      /*if(url.searchParams.has('logout')) {
+        console.log('on logout, going back');
+        url.searchParams.delete('logout');
+        izusRef.value.src = url.toString();
+      }*/
       sendLoginRequest();
     });
   }
@@ -152,25 +157,39 @@ const signOut = (error: string = 'none') => {
 };
 
 const handleMessage = (event: MessageEvent) => {
-  isLoadingRef.value = false;
-
-  if(!isLoadingPausedRef.value) {
-    isLoadingOpenRef.value = false;
-  }
 
   if (event.data.loginResult) {
     authTriedRef.value = true;
 
     if(event.data.loginResult !== 'ok') {
-      if((event.data.loginResult === 'messageException' || event.data.loginResult === 'pdoException') && loginAttempt < 2) {
+      if(event.data.loginResult === 'failed' && loginAttempt < 2 && route.params.login == 'true' && authTriedRef.value) {
+        console.log('login failed, trying again')
         loginAttempt++;
-        signIn();
+        authTriedRef.value = false;
+        isSignedInRef.value = false;
+        store.dispatch('updateIsSignedIn', false);
+        isLoadingOpenRef.value = true;
+        isLoadingOpenRef.value = true;
+        izusRef.value.src = globals.appUrl;
+        loginAttempt++;
+        return;
       }
-      store.dispatch('updateIsSignedIn', false);
-      router.push({ name: 'login', params: { error: event.data.loginResult } });
+
+      else if(event.data.loginResult && event.data.loginResult !== 'ok' && event.data.loginResult !== 'failed') {
+        store.dispatch('updateIsSignedIn', false);
+        router.push({ name: 'login', params: { error: event.data.loginResult } });
+        return;
+      }
     }
     else {
       store.dispatch('updateIsSignedIn', true);
+    }
+
+    store.dispatch('updateIsSignedIn', true);
+    isLoadingRef.value = false;
+
+    if (!isLoadingPausedRef.value) {
+      isLoadingOpenRef.value = false;
     }
   }
 

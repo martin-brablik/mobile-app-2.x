@@ -4,7 +4,7 @@ import { globals } from './globals';
 export default createStore({
     state: {
         url: globals.appUrl,
-        isSignedIn: false,
+        isSignedIn: JSON.parse(localStorage.getItem('isSignedIn') || 'false'),
         useAppLock: JSON.parse(localStorage.getItem('useAppLock') || 'false'),
         userPin: localStorage.getItem('userPin') || undefined,
         lockOption: localStorage.getItem('lockOption') || 'biometry',
@@ -19,6 +19,7 @@ export default createStore({
         },
         setIsSignedIn(state, isSignedIn) {
             state.isSignedIn = isSignedIn;
+            localStorage.setItem('isSignedIn', isSignedIn);
         },
         setUseAppLock(state, value) {
             state.useAppLock = value;

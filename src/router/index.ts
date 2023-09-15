@@ -12,7 +12,8 @@ import { computed } from 'vue';
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: computed(() => store.getters.getAutoLogin).value && computed(() => store.getters.getUsername).value && computed(() => store.getters.getPassword).value ? '/home/login=true' : '/login/error=none',
+    redirect: computed(() => store.getters.getAutoLogin).value && computed(() => store.getters.getUsername).value && computed(() => store.getters.getPassword).value ? 
+      '/home/login=true' : (computed(() => store.getters.getIsSignedIn).value ? '/home/login=false' : 'login/error=none'),
   },
   {
     path: '/home/login=:login',
