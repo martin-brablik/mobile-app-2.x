@@ -19,6 +19,7 @@ export default createStore({
         },
         setIsSignedIn(state, isSignedIn) {
             state.isSignedIn = isSignedIn;
+            localStorage.setItem('isSignedIn', isSignedIn);
         },
         setUseAppLock(state, value) {
             state.useAppLock = value;
