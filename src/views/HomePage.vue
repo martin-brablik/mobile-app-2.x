@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 
-import { IonContent, IonPage, IonModal, IonImg, onIonViewWillEnter, useIonRouter, onIonViewDidEnter } from '@ionic/vue';
+import { IonContent, IonPage, IonModal, IonImg, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { Ref, ref, onMounted, computed } from 'vue';
 import { SHA1, MD5 } from 'crypto-js';
 import { App } from '@capacitor/app';
@@ -84,34 +84,29 @@ onIonViewWillEnter(() => {
   isSignedInRef. value = computed(() => store.getters.getIsSignedIn).value;
   usernameRef.value = computed(() => store.getters.getUsername).value;
   passwordRef.value = computed(() => store.getters.getPassword).value;
-  reactiveUrlRef.value = computed(() => store.getters.getUrl).value;
   localeRef.value = computed(() => store.getters.getLanguage).value;
 
   if(reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signOut();
   }
 
-  if(route.params.login == 'true' && !isSignedInRef.value) {
-    isLoadingOpenRef.value = true;
-    isLoadingRef.value = true;
+  if(route.params.login == 'true' && !getStatus()) {
+    startLoading();
     setTimeout(() => {
-      if(isLoadingRef.value) {
-        isLoadingRef.value = false;
-
-        if(!isLoadingPausedRef.value) {
-          isLoadingOpenRef.value = false;
-        }
-
-        signOut('messageException');
-      }
+      stopLoading();
+      signOut();
     }, 10000);
-    signIn();
   }
 });
 
 onIonViewDidEnter(async () => {
   await fetchTips();
   getRandomTip();
+});
+
+onIonViewWillLeave(() => {
+  store.dispatch('updateUrl', reactiveUrlRef.value);
+  store.dispatch('updateIsSignedIn', isSignedInRef.value);
 });
 
 const getSignInPost = () => {
@@ -122,75 +117,40 @@ const getSignInPost = () => {
   const postData = { sugar: sugar, password_hmac: password_hmac, username: username, prepassword: 'Heslo' };
 
   return postData;
+};
+
+const getStatus = () => {
+  return isSignedInRef.value;
 }
 
 const signIn = () => {
-  const sendLoginRequest = () => {
-    if (!authTriedRef.value && !isSignedInRef.value && !reactiveUrlRef.value.includes(globals.logoutQuery)) {
-      izusRef.value.contentWindow?.postMessage({ login: getSignInPost() }, "*");
-      store.dispatch('updateIsSignedIn', true);
-      authTriedRef.value = true;
-    }
-  }
-
-  /*let url = new URL(izusRef.value.src.toString());
-  url.searchParams.append('logout', 'true');
-  izusRef.value.src = url.toString();*/
-
-  if (!authTriedRef.value) {
-    izusRef.value.addEventListener('load', () => {
-      /*if(url.searchParams.has('logout')) {
-        console.log('on logout, going back');
-        url.searchParams.delete('logout');
-        izusRef.value.src = url.toString();
-      }*/
-      sendLoginRequest();
-    });
-  }
+  izusRef.value.contentWindow.postMessage({ login: getSignInPost() }, '*');
+  updateStatus(true);
 };
 
 const signOut = (error: string = 'none') => {
-  store.dispatch('updateIsSignedIn', false);
-  store.dispatch('updateUrl', globals.appUrl + globals.logoutQuery);
-  reactiveUrlRef.value = globals.appUrl + globals.logoutQuery;
+  updateStatus(false);
+  updateUrl(globals.appUrl + globals.logoutQuery);
   router.push({ name: 'login', params: { error: error } });
 };
 
 const handleMessage = (event: MessageEvent) => {
-
-  if (event.data.loginResult) {
-    authTriedRef.value = true;
-
-    if(event.data.loginResult !== 'ok') {
-      if(event.data.loginResult === 'failed' && loginAttempt < 2 && route.params.login == 'true' && authTriedRef.value) {
-        console.log('login failed, trying again')
-        loginAttempt++;
-        authTriedRef.value = false;
-        isSignedInRef.value = false;
-        store.dispatch('updateIsSignedIn', false);
-        isLoadingOpenRef.value = true;
-        isLoadingOpenRef.value = true;
-        izusRef.value.src = globals.appUrl;
-        loginAttempt++;
-        return;
-      }
-
-      else if(event.data.loginResult && event.data.loginResult !== 'ok' && event.data.loginResult !== 'failed') {
-        store.dispatch('updateIsSignedIn', false);
-        router.push({ name: 'login', params: { error: event.data.loginResult } });
-        return;
-      }
+  if(event.data.status === 'loaded') {
+    signIn();
+  }
+  else if(event.data.status === 'signedIn') {
+    updateStatus(true);
+    stopLoading();
+  }
+  else if(event.data.status === 'error') {
+    if(loginAttempt < 2) {
+      updateUrl(globals.appUrl + globals.logoutQuery);
+      loginAttempt++;
     }
-    else {
-      store.dispatch('updateIsSignedIn', true);
-    }
-
-    store.dispatch('updateIsSignedIn', true);
-    isLoadingRef.value = false;
-
-    if (!isLoadingPausedRef.value) {
-      isLoadingOpenRef.value = false;
-    }
+  }
+  else if(event.data.loginResult && event.data.loginResult !== 'ok') {
+    updateStatus(false);
+    router.push({ name: 'login', params: { error: event.data.loginResult } });
   }
 
   if (event.data.action) {
@@ -203,6 +163,31 @@ const handleMessage = (event: MessageEvent) => {
         break;
     }
   }
+}
+
+const startLoading = () => {
+  isLoadingOpenRef.value = true;
+  isLoadingRef.value = true;
+};
+
+const stopLoading = () => {
+  if (isLoadingRef.value) {
+    isLoadingRef.value = false;
+
+    if (!isLoadingPausedRef.value) {
+      isLoadingOpenRef.value = false;
+    }
+  }
+};
+
+const updateStatus = (value: boolean) => {
+  isSignedInRef.value = value;
+  store.dispatch('updateIsSignedIn', value);
+}
+
+const updateUrl = (url: string) => {
+  reactiveUrlRef.value = url;
+  store.dispatch('updateUrl', url);
 }
 
 const fetchTips = async () => {
