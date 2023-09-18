@@ -4,16 +4,16 @@
       <div style="height: 100%; width: 100%;">
         <iframe class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
       </div>
-      <ion-modal :is-open="isLoadingOpenRef" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
+      <ion-modal :isOpen="isLoadingOpenRef" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
         <div class="loading">
           <ion-img class="ion-padding" :src="iZUS_pruhl" />
           <div class="lds-dual-ring">
             <div ref="ringRef" class="lds-dual-ring-symbol"></div>
           </div>
           <article v-if="localeRef == 'cs' || localeRef == 'sk'" class="tip ion-padding">
-            <h4 ref="didYouKnowHeadingRef">{{ $tm('did_you_know').toString() }}</h4>
-            <p> {{ loadingTipRef.nadpis }}</p>
-            <p v-if="isLoadingPausedRef">{{ loadingTipRef.text }}</p>
+            <h4 ref="didYouKnowHeadingRef">{{ '' }}</h4>
+            <p ref="didYouKnowContentRef">{{ '' }}</p>
+            <p ref="didYouKnowTextRef" v-if="isLoadingPausedRef">{{ '' }}</p>
           </article>
         </div>
       </ion-modal>
@@ -23,8 +23,8 @@
 
 <script setup lang="ts">
 
-import { IonContent, IonPage, IonModal, IonImg, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
-import { Ref, ref, onMounted, computed } from 'vue';
+import { IonContent, IonPage, IonModal, IonImg, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave, onIonViewDidLeave } from '@ionic/vue';
+import { Ref, ref, onMounted, computed, onUnmounted } from 'vue';
 import { SHA1, MD5 } from 'crypto-js';
 import { App } from '@capacitor/app';
 import store from '@/store';
@@ -53,12 +53,14 @@ const autoLoginRef = ref(computed(() => store.getters.getAutoLogin).value);
 const usernameRef = ref(computed(() => store.getters.getUsername).value);
 const passwordRef = ref(computed(() => store.getters.getPassword).value);
 const isSignedInRef = ref(computed(() => store.getters.getIsSignedIn).value);
-const authTriedRef = ref(false);
+const authFailedRef = ref(false);
 const isLoadingRef = ref();
 const isLoadingOpenRef = ref();
 const loadingTipRef = ref();
 const localeRef = ref(computed(() => store.getters.getLanguage).value);
 const didYouKnowHeadingRef : Ref<HTMLElement | undefined> = ref();
+const didYouKnowContentRef: Ref<HTMLElement | undefined> = ref();
+const didYouKnowTextRef: Ref<HTMLElement | undefined> = ref();
 const isLoadingPausedRef = ref(false);
 const ringRef : Ref<HTMLElement | undefined> = ref();
 
@@ -79,34 +81,60 @@ onMounted(() => {
 });
 
 onIonViewWillEnter(() => {
-  authTriedRef.value = false;
+  authFailedRef.value = false;
   reactiveUrlRef.value = computed(() => store.getters.getUrl).value;
   isSignedInRef. value = computed(() => store.getters.getIsSignedIn).value;
   usernameRef.value = computed(() => store.getters.getUsername).value;
   passwordRef.value = computed(() => store.getters.getPassword).value;
   localeRef.value = computed(() => store.getters.getLanguage).value;
 
+  loginAttempt = 1;
+  console.log('entered');
+  console.log(izusRef.value.src);
+
   if(reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signOut();
   }
 
+  console.log('status: ' + getStatus());
   if(route.params.login == 'true' && !getStatus()) {
     startLoading();
     setTimeout(() => {
+      console.log('timeout');
       stopLoading();
-      signOut();
+      if(!isSignedInRef.value) {
+        router.push({ name: 'login', params: { error: 'messageException' } });
+      }
     }, 10000);
   }
 });
 
-onIonViewDidEnter(async () => {
+const returnTips = async () => {
   await fetchTips();
   getRandomTip();
+}
+
+onIonViewDidEnter(async () => {
+  await returnTips();
+
+  if(didYouKnowHeadingRef.value && loadingTipRef.value.nadpis) {
+    didYouKnowHeadingRef.value.innerText = tm('did_you_know');
+  }
+
+  if(didYouKnowContentRef.value) {
+    console.log('loadingTipRef: ' + loadingTipRef.value)
+    didYouKnowContentRef.value.innerText = loadingTipRef.value ? loadingTipRef.value.nadpis : '';
+  }
+
+  if (didYouKnowTextRef.value) {
+    didYouKnowTextRef.value.innerText = loadingTipRef.value ? loadingTipRef.value.text : '';
+  }
 });
 
 onIonViewWillLeave(() => {
   store.dispatch('updateUrl', reactiveUrlRef.value);
   store.dispatch('updateIsSignedIn', isSignedInRef.value);
+  stopLoading();
 });
 
 const getSignInPost = () => {
@@ -124,21 +152,24 @@ const getStatus = () => {
 }
 
 const signIn = () => {
-  izusRef.value.contentWindow.postMessage({ login: getSignInPost() }, '*');
-  updateStatus(true);
+  if(izusRef.value && izusRef.value.contentWindow && !authFailedRef.value) {
+    izusRef.value.contentWindow?.postMessage({ login: getSignInPost() }, '*');
+  }
 };
 
 const signOut = (error: string = 'none') => {
+  console.log('signOut');
   updateStatus(false);
   updateUrl(globals.appUrl + globals.logoutQuery);
   router.push({ name: 'login', params: { error: error } });
 };
 
 const handleMessage = (event: MessageEvent) => {
-  if(event.data.status === 'loaded') {
+  console.log(event.data);
+  if(event.data.status === 'loaded' && !reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signIn();
   }
-  else if(event.data.status === 'signedIn') {
+  else if(event.data.status === 'signed in') {
     updateStatus(true);
     stopLoading();
   }
@@ -147,9 +178,15 @@ const handleMessage = (event: MessageEvent) => {
       updateUrl(globals.appUrl + globals.logoutQuery);
       loginAttempt++;
     }
+    else {
+      updateStatus(false);
+      authFailedRef.value = true;
+      router.push({ name: 'login', params: { error: 'messageException' } });
+    }
   }
   else if(event.data.loginResult && event.data.loginResult !== 'ok') {
     updateStatus(false);
+    authFailedRef.value = true;
     router.push({ name: 'login', params: { error: event.data.loginResult } });
   }
 
@@ -166,28 +203,42 @@ const handleMessage = (event: MessageEvent) => {
 }
 
 const startLoading = () => {
+  console.log("Loading started");
   isLoadingOpenRef.value = true;
   isLoadingRef.value = true;
 };
 
 const stopLoading = () => {
+  console.log('stop loading');
+  console.log(isLoadingRef.value);
+  console.log(isLoadingOpenRef.value);
+  console.log(isLoadingPausedRef.value);
   if (isLoadingRef.value) {
     isLoadingRef.value = false;
 
     if (!isLoadingPausedRef.value) {
+      console.log('hiding loading')
       isLoadingOpenRef.value = false;
+      console.log(isLoadingOpenRef.value);
     }
   }
 };
 
 const updateStatus = (value: boolean) => {
+  console.log('updateStatus');
   isSignedInRef.value = value;
   store.dispatch('updateIsSignedIn', value);
 }
 
 const updateUrl = (url: string) => {
+  console.log('updateUrl');
   reactiveUrlRef.value = url;
   store.dispatch('updateUrl', url);
+  console.log(reactiveUrlRef.value);
+  
+  if(izusRef.value) {
+    izusRef.value.src = url;
+  }
 }
 
 const fetchTips = async () => {
@@ -205,11 +256,7 @@ const getRandomTip = () => {
   try {
     const index = Math.floor(Math.random() * tips.length);
     console.log(tips[index].nadpis);
-    loadingTipRef.value = tips[index];
-
-    if(didYouKnowHeadingRef != undefined && didYouKnowHeadingRef.value != undefined) {
-      didYouKnowHeadingRef.value.innerText = tm('did_you_know').toString();
-    }
+    loadingTipRef.value = tips[index] ?? '';
   }
   catch(error) {
     console.log('tips not loaded yet');
