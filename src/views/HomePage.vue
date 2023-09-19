@@ -102,10 +102,7 @@ onIonViewWillEnter(() => {
     setTimeout(() => {
       console.log('timeout');
       stopLoading();
-      if(!isSignedInRef.value) {
-        router.push({ name: 'login', params: { error: 'messageException' } });
-      }
-    }, 10000);
+    }, 20000);
   }
 });
 
