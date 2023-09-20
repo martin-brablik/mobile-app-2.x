@@ -22,12 +22,10 @@
                     <ion-icon :icon="home" slot="start"></ion-icon>
                     <ion-label>{{ tm('main_page') }}</ion-label>
                 </ion-item>
-                <!--
                 <ion-item @click="push('/inventory')">
                     <ion-icon :icon="checkmark" slot="start"></ion-icon>
                     <ion-label>{{ $tm('inventory') }}</ion-label>
                 </ion-item>
-                -->
                 <ion-item @click="push('/settings')">
                     <ion-icon :icon="settings" slot="start"></ion-icon>
                     <ion-label>{{ $tm('settings') }}</ion-label>
