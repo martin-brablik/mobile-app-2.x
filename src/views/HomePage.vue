@@ -10,10 +10,15 @@
           <div class="lds-dual-ring">
             <div ref="ringRef" class="lds-dual-ring-symbol"></div>
           </div>
-          <article v-if="localeRef == 'cs' || localeRef == 'sk'" class="tip ion-padding">
-            <h4 ref="didYouKnowHeadingRef">{{ '' }}</h4>
-            <p ref="didYouKnowContentRef">{{ '' }}</p>
-            <p ref="didYouKnowTextRef" v-if="isLoadingPausedRef">{{ '' }}</p>
+          <article v-if="(localeRef == 'cs' || localeRef == 'sk') && tipsLoadedRef" class="tip ion-padding">
+            <h4 ref="didYouKnowHeadingRef">{{ tm('did_you_know') }}</h4>
+            <p ref="didYouKnowContentRef">{{ loadingTipRef.nadpis }}</p>
+            <p ref="didYouKnowTextRef" v-if="isLoadingPausedRef">{{ loadingTipRef.text }}</p>
+          </article>
+          <article v-if="(localeRef == 'cs' || localeRef == 'sk') && !tipsLoadedRef" class="tip ion-padding skeleton">
+              <h4><ion-skeleton-text :animated="true" style="width: 11ch;"></ion-skeleton-text></h4>
+              <p><ion-skeleton-text :animated="true" style="width: 25ch;"></ion-skeleton-text></p>
+              <p v-if="isLoadingPausedRef"><ion-skeleton-text :animated="true" style="width: 20ch;"></ion-skeleton-text></p>
           </article>
         </div>
       </ion-modal>
@@ -23,7 +28,7 @@
 
 <script setup lang="ts">
 
-import { IonContent, IonPage, IonModal, IonImg, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave, onIonViewDidLeave } from '@ionic/vue';
+import { IonContent, IonPage, IonModal, IonImg, IonSkeletonText, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { Ref, ref, onMounted, computed, onUnmounted } from 'vue';
 import { SHA1, MD5, enc } from 'crypto-js';
 import { App } from '@capacitor/app';
@@ -63,6 +68,7 @@ const didYouKnowContentRef: Ref<HTMLElement | undefined> = ref();
 const didYouKnowTextRef: Ref<HTMLElement | undefined> = ref();
 const isLoadingPausedRef = ref(false);
 const ringRef : Ref<HTMLElement | undefined> = ref();
+const tipsLoadedRef = ref(false);
 
 onMounted(() => {
   izusRef.value.addEventListener('load', () => {
@@ -87,6 +93,7 @@ onIonViewWillEnter(() => {
   usernameRef.value = computed(() => store.getters.getUsername).value;
   passwordRef.value = computed(() => store.getters.getPassword).value;
   localeRef.value = computed(() => store.getters.getLanguage).value;
+  tipsLoadedRef.value = false;
 
   loginAttempt = 1;
   console.log('entered');
@@ -118,6 +125,8 @@ const returnTips = async () => {
 onIonViewDidEnter(async () => {
   await returnTips();
 
+  tipsLoadedRef.value = true;
+  console.log('tips loaded');
   if(didYouKnowHeadingRef.value && loadingTipRef.value.nadpis) {
     didYouKnowHeadingRef.value.innerText = tm('did_you_know');
   }
@@ -359,6 +368,12 @@ article {
   margin-top: 1em;
   position: absolute;
   bottom: 0;
+}
+
+article.skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 </style>
