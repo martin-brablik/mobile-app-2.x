@@ -142,9 +142,7 @@ onIonViewWillLeave(() => {
 const getSignInPost = () => {
   const validateCredential = (credential: string | undefined | null) => credential && credential.length != 0 && credential !== '' ? credential : null;
   const username = validateCredential(usernameRef.value) ?? 'neexistujici_uzivatel';
-  console.log(username);
   const password = validateCredential(passwordRef.value) ?? 'neexistujici_heslo';
-  console.log(password);
   const sugar = Math.floor(Math.random() * 900000) + 100000;
   const password_hmac = SHA1(MD5(enc.Latin1.parse(password + username)).toString().toLocaleLowerCase('sk-SK') + sugar).toString().toLocaleLowerCase('sk-SK');
   const postData = { sugar: sugar, password_hmac: password_hmac, username: username, prepassword: 'Heslo' };
