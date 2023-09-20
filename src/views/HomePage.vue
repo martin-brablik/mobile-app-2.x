@@ -96,6 +96,10 @@ onIonViewWillEnter(() => {
     signOut();
   }
 
+  if(!getStatus()) {
+    signIn();
+  }
+
   console.log('status: ' + getStatus());
   if(route.params.login == 'true' && !getStatus()) {
     startLoading();
@@ -131,12 +135,13 @@ onIonViewDidEnter(async () => {
 onIonViewWillLeave(() => {
   store.dispatch('updateUrl', reactiveUrlRef.value);
   store.dispatch('updateIsSignedIn', isSignedInRef.value);
+  izusRef.value.src = izusRef.value.src;
   stopLoading();
 });
 
 const getSignInPost = () => {
-  const username = usernameRef.value;
-  const password = passwordRef.value;
+  const username = usernameRef.value ?? 'neexistujici_uzivatel';
+  const password = passwordRef.value ?? 'neexistujici_heslo';
   const sugar = Math.floor(Math.random() * 900000) + 100000;
   const password_hmac = SHA1(MD5(enc.Latin1.parse(password + username)).toString().toLocaleLowerCase('sk-SK') + sugar).toString().toLocaleLowerCase('sk-SK');
   const postData = { sugar: sugar, password_hmac: password_hmac, username: username, prepassword: 'Heslo' };
