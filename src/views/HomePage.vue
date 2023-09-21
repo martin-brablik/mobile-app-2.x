@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ion-content id="main-content" :scroll-events="true">
+    <ion-content id="main-content" :scroll-events="true" safe-area>
       <div style="height: 100%; width: 100%;">
         <iframe class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
       </div>
@@ -296,11 +296,15 @@ const pauseLoading = (value: boolean) => {
 
 <style scoped>
 
+#main-content {
+  padding: var(--ion-safe-area-top) var(--ion-safe-area-left) var(--ion-safe-area-bottom) var(--ion-safe-area-right);
+}
+
 ion-modal {
-  .modal-wrapper {
-    width: 100% !important;
-    height: 100% !important;
-  }
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .loading {
