@@ -1,5 +1,6 @@
 <template>
   <ion-page>
+    <ion-header></ion-header>
     <ion-content id="main-content" :scroll-events="true" safe-area>
       <div style="height: 100%; width: 100%;">
         <iframe class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
@@ -28,7 +29,7 @@
 
 <script setup lang="ts">
 
-import { IonContent, IonPage, IonModal, IonImg, IonSkeletonText, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
+import { IonContent, IonPage, IonHeader, IonModal, IonImg, IonSkeletonText, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { Ref, ref, onMounted, computed, onUnmounted } from 'vue';
 import { SHA1, MD5, enc } from 'crypto-js';
 import { App } from '@capacitor/app';
@@ -296,15 +297,26 @@ const pauseLoading = (value: boolean) => {
 
 <style scoped>
 
-#main-content {
-  padding: var(--ion-safe-area-top) var(--ion-safe-area-left) var(--ion-safe-area-bottom) var(--ion-safe-area-right);
+ion-header, #main-content {
+  margin-top: var(--ion-safe-area-top) !important;
+  margin-top: constant(safe-area-inset-top) !important; /* iOS 11.0 - 11.2 */
+  margin-top: env(safe-area-inset-top) !important; /* iOS 11.3+ */
+  margin-bottom: var(--ion-safe-area-bottom) !important;
+  margin-bottom: constant(safe-area-inset-bottom) !important; /* iOS 11.0 - 11.2 */
+  margin-bottom: env(safe-area-inset-bottom) !important; /* iOS 11.3+ */
+  margin-left: var(--ion-safe-area-left) !important;
+  margin-left: constant(safe-area-inset-left) !important; /* iOS 11.0 - 11.2 */
+  margin-left: env(safe-area-inset-left) !important; /* iOS 11.3+ */
+  margin-right: var(--ion-safe-area-right) !important;
+  margin-right: constant(safe-area-inset-right) !important; /* iOS 11.0 - 11.2 */
+  margin-right: env(safe-area-inset-right) !important; /* iOS 11.3+ */
 }
 
 ion-modal {
-  padding-top: constant(safe-area-inset-top);
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
+  .modal-wrapper {
+    width: 100% !important;
+    height: 100% !important;
+  }
 }
 
 .loading {
