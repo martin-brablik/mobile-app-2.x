@@ -167,7 +167,7 @@ const handleMessage = (event: MessageEvent) => {
     signIn();
   }
   else if(event.data.status === 'signed in') {
-    updateStatus(true);
+    updateStatus(true, event.data.token, event.data.user_perm, event.data.nf_majetek);
     stopLoading();
   }
   else if(event.data.status === 'error') {
@@ -221,10 +221,15 @@ const stopLoading = () => {
   }
 };
 
-const updateStatus = (value: boolean) => {
+const updateStatus = (value: boolean, authToken = '', deviceToken = '', userPerm = 0, nfInventory = 0) => {
   console.log('updateStatus');
+  console.log(value, authToken, userPerm, nfInventory);
   isSignedInRef.value = value;
   store.dispatch('updateIsSignedIn', value);
+  store.dispatch('updateAuthToken', authToken);
+  store.dispatch('updateDeviceToken', deviceToken);
+  store.dispatch('updateUserPerm', userPerm);
+  store.dispatch('updateNfInventory', nfInventory);
 }
 
 const updateUrl = (url: string) => {

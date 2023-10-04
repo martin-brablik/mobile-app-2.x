@@ -12,6 +12,10 @@ export default createStore({
         username: localStorage.getItem('username') || '',
         password: localStorage.getItem('password') || '',
         autoLogin: JSON.parse(localStorage.getItem('autoLogin') || 'false'),
+        authToken: '',
+        deviceToken: '',
+        userPerm: 0,
+        nfInventory: 0,
     },
     mutations: {
         setUrl(state, url) {
@@ -47,6 +51,18 @@ export default createStore({
             state.autoLogin = autoLogin;
             localStorage.setItem('autoLogin', autoLogin);
         },
+        setAuthToken(state, authToken) {
+            state.authToken = authToken;
+        },
+        setDeviceToken(state, deviceToken) {
+            state.deviceToken = deviceToken;
+        },
+        setUserPerm(state, userPerm) {
+            state.userPerm = userPerm;
+        },
+        setNfInventory(state, nfInventory) {
+            state.nfInventory = nfInventory;
+        }
     },
     actions: {
         updateUrl({ commit }, url) {
@@ -76,6 +92,18 @@ export default createStore({
         updateAutoLogin({ commit }, autoLogin) {
             commit('setAutoLogin', autoLogin);
         },
+        updateAuthToken({ commit }, authToken) {
+            commit('setAuthToken', authToken);
+        },
+        updateDeviceToken({ commit }, deviceToken) {
+            commit('setDeviceToken', deviceToken);
+        },
+        updateUserPerm({ commit }, userPerm) {
+            commit('setUserPerm', userPerm);
+        },
+        updateNfInventory({ commit }, nfInventory) {
+            commit('setNfInventory', nfInventory);
+        }
     },
     getters: {
         getUrl: state => state.url,
@@ -87,5 +115,9 @@ export default createStore({
         getUsername: state => state.username,
         getPassword: state => state.password,
         getAutoLogin: state => state.autoLogin,
+        getAuthToken: state => state.authToken,
+        getDeviceToken: state => state.deviceToken,
+        getUserPerm: state => state.userPerm,
+        getNfInventory: state => state.nfInventory,
     }
 });

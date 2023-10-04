@@ -22,12 +22,13 @@
 
 <script setup lang="ts">
 
-import { IonPage, IonContent, IonFooter, IonButtons, IonButton, IonScroll, IonList, IonItem, IonLabel, useIonRouter } from '@ionic/vue';
+import { IonPage, IonContent, IonFooter, IonButtons, IonButton, IonList, IonItem, IonLabel, useIonRouter } from '@ionic/vue';
 import { BarcodeScanner, SupportedFormat } from '@capacitor-community/barcode-scanner';
 import { onMounted, ref, Ref } from 'vue';
 import { App } from '@capacitor/app';
 import Toolbar from '@/components/Toolbar.vue'
 import { globals } from '@/globals';
+import store from '@/store';
 
 const router = useIonRouter();
 const scannedCodes: Ref<string[]> = ref(new Array<string>());
@@ -129,16 +130,20 @@ const parseQrData = (url: string) => {
     return match ? match[0] : undefined;
 }
 
-const inventory = (id: number) => {
+const inventoryItem = async (id: number) => {
     let url = globals.appUrl + 'ws/inventarizace_majetku/';
-    const req = {
+    let authCookie = computed(() => store.getters.getAuth).value;
+    const req: RequestInit = {
         method: 'post',
         headers: {
             'Content-Type': 'application/json',
-            'Cookie': '', //auth cookie??
-            'Authorization': '' //Bearer token??
-        }
+            'Cookie': '', //auth cookie
+        },
+        body: JSON.stringify({ "kody": [id], "inventarizovat-vsechny-kusy": false })
     }
+    const res = await fetch(url, req);
+
+    console.log(res);
 }
 
 </script>
