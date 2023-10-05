@@ -13,7 +13,7 @@
             </ion-content>
             <ion-buttons>
                 <ion-button fill="solid" color="medium">{{ $tm('pause') }}</ion-button>
-                <ion-button fill="solid" color="tertiary">{{ $tm('send') }}</ion-button>
+                <ion-button fill="solid" color="tertiary" @click="inventoryItem(Number.parseInt(scannedCodes[0]));">{{ $tm('send') }}</ion-button>
                 <ion-button fill="solid" color="danger">{{ $tm('end') }}</ion-button>
             </ion-buttons>
         </ion-footer>
@@ -24,7 +24,7 @@
 
 import { IonPage, IonContent, IonFooter, IonButtons, IonButton, IonList, IonItem, IonLabel, useIonRouter } from '@ionic/vue';
 import { BarcodeScanner, SupportedFormat } from '@capacitor-community/barcode-scanner';
-import { onMounted, ref, Ref } from 'vue';
+import { computed, onMounted, ref, Ref } from 'vue';
 import { App } from '@capacitor/app';
 import Toolbar from '@/components/Toolbar.vue'
 import { globals } from '@/globals';
@@ -77,6 +77,12 @@ const startScan = async () => {
         console.log(lastScannedCode);
         if(lastScannedCode) {
             scannedCodes.value.push(lastScannedCode);
+            try {
+                await inventoryItems([Number.parseInt(lastScannedCode)], false);
+            }
+            catch(e) {
+
+            }
         }
         return lastScannedCode;
     }
@@ -130,20 +136,25 @@ const parseQrData = (url: string) => {
     return match ? match[0] : undefined;
 }
 
-const inventoryItem = async (id: number) => {
-    let url = globals.appUrl + 'ws/inventarizace_majetku/';
-    let authCookie = computed(() => store.getters.getAuth).value;
+const inventoryItems = async (ids: number[], inventoryBatch: boolean) => {
+    const url = globals.appUrl + 'ws/inventarizace_majetku/';
+    const authToken = computed(() => store.getters.getAuthToken).value;
     const req: RequestInit = {
         method: 'post',
         headers: {
             'Content-Type': 'application/json',
-            'Cookie': '', //auth cookie
+            'Authorization': 'Bearer ' + authToken,
         },
-        body: JSON.stringify({ "kody": [id], "inventarizovat-vsechny-kusy": false })
+        body: JSON.stringify({ "kody": ids, "inventarizovat-vsechny-kusy": inventoryBatch })
     }
     const res = await fetch(url, req);
 
-    console.log(res);
+    if(!res.ok) {
+        throw res.status;
+    }
+
+    const result = await res.json();
+    console.log(result);
 }
 
 </script>

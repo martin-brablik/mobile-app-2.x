@@ -32,6 +32,8 @@ import { useRoute } from 'vue-router';
 import { globals } from '@/globals';
 import iZUS_pruhl from '@/assets/images/iZUS_pruhl.png';
 import { useI18n } from 'vue-i18n';
+import { Md5 } from 'ts-md5';
+import { terminal } from 'ionicons/icons';
 
 const props = defineProps({
   login: {
@@ -134,11 +136,13 @@ onIonViewWillLeave(() => {
   stopLoading();
 });
 
+const hashPassword = (username: string, password: string, salt: string) => SHA1(MD5(enc.Latin1.parse(password + username)).toString().toLocaleLowerCase('sk-SK') + salt).toString().toLocaleLowerCase('sk-SK');
+
 const getSignInPost = () => {
   const username = usernameRef.value;
   const password = passwordRef.value;
   const sugar = Math.floor(Math.random() * 900000) + 100000;
-  const password_hmac = SHA1(MD5(enc.Latin1.parse(password + username)).toString().toLocaleLowerCase('sk-SK') + sugar).toString().toLocaleLowerCase('sk-SK');
+  const password_hmac = hashPassword(username, password, sugar.toString());
   const postData = { sugar: sugar, password_hmac: password_hmac, username: username, prepassword: 'Heslo' };
 
   return postData;
@@ -154,6 +158,28 @@ const signIn = () => {
   }
 };
 
+const signInApi = async () => {	
+  const url = globals.appUrl + 'ws/api/login/';
+  const timestamp = new Date().getTime();
+  const password_hmac = hashPassword(usernameRef.value, passwordRef.value, timestamp.toString());
+  const data = {
+    username: usernameRef.value,
+    password: password_hmac,
+    salt: timestamp
+  };
+  const req: RequestInit = {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    }
+  } 
+  const res = await fetch(url, req);
+  const apiKey = await res.json();
+
+  store.dispatch('updateAuthToken', apiKey.access_token);
+}
+
 const signOut = (error: string = 'none') => {
   console.log('signOut');
   updateStatus(false);
@@ -161,13 +187,13 @@ const signOut = (error: string = 'none') => {
   router.push({ name: 'login', params: { error: error } });
 };
 
-const handleMessage = (event: MessageEvent) => {
+const handleMessage = async (event: MessageEvent) => {
   console.log(event.data);
   if(event.data.status === 'loaded' && !reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signIn();
   }
   else if(event.data.status === 'signed in') {
-    updateStatus(true, event.data.token, event.data.user_perm, event.data.nf_majetek);
+    await updateStatus(true, event.data.token, event.data.user_perm, event.data.nf_majetek);
     stopLoading();
   }
   else if(event.data.status === 'error') {
@@ -221,15 +247,17 @@ const stopLoading = () => {
   }
 };
 
-const updateStatus = (value: boolean, authToken = '', deviceToken = '', userPerm = 0, nfInventory = 0) => {
+const updateStatus = async (value: boolean, authToken = '', userPerm = 0, nfInventory = 0) => {
   console.log('updateStatus');
   console.log(value, authToken, userPerm, nfInventory);
   isSignedInRef.value = value;
   store.dispatch('updateIsSignedIn', value);
-  store.dispatch('updateAuthToken', authToken);
-  store.dispatch('updateDeviceToken', deviceToken);
   store.dispatch('updateUserPerm', userPerm);
   store.dispatch('updateNfInventory', nfInventory);
+
+  if(value) {
+    await signInApi();
+  }
 }
 
 const updateUrl = (url: string) => {

@@ -46,6 +46,7 @@ const remeberCredentialsRef = ref(computed(() => store.getters.getUsername).valu
 const showPasswordRef = ref(false);
 
 onIonViewWillEnter(() => {
+  console.log(localStorage.getItem('token'));
   usernameRef.value = computed(() => store.getters.getUsername).value;
   passwordRef.value = computed(() => store.getters.getPassword).value;
   remeberCredentialsRef.value = computed(() => store.getters.getUsername).value ? true : false;

@@ -13,7 +13,6 @@ export default createStore({
         password: localStorage.getItem('password') || '',
         autoLogin: JSON.parse(localStorage.getItem('autoLogin') || 'false'),
         authToken: '',
-        deviceToken: '',
         userPerm: 0,
         nfInventory: 0,
     },
@@ -54,9 +53,6 @@ export default createStore({
         setAuthToken(state, authToken) {
             state.authToken = authToken;
         },
-        setDeviceToken(state, deviceToken) {
-            state.deviceToken = deviceToken;
-        },
         setUserPerm(state, userPerm) {
             state.userPerm = userPerm;
         },
@@ -95,9 +91,6 @@ export default createStore({
         updateAuthToken({ commit }, authToken) {
             commit('setAuthToken', authToken);
         },
-        updateDeviceToken({ commit }, deviceToken) {
-            commit('setDeviceToken', deviceToken);
-        },
         updateUserPerm({ commit }, userPerm) {
             commit('setUserPerm', userPerm);
         },
@@ -116,7 +109,6 @@ export default createStore({
         getPassword: state => state.password,
         getAutoLogin: state => state.autoLogin,
         getAuthToken: state => state.authToken,
-        getDeviceToken: state => state.deviceToken,
         getUserPerm: state => state.userPerm,
         getNfInventory: state => state.nfInventory,
     }
