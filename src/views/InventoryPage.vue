@@ -13,7 +13,7 @@
             </ion-content>
             <ion-buttons>
                 <ion-button fill="solid" color="medium">{{ $tm('pause') }}</ion-button>
-                <ion-button fill="solid" color="tertiary" @click="inventoryItem(Number.parseInt(scannedCodes[0]));">{{ $tm('send') }}</ion-button>
+                <ion-button fill="solid" color="tertiary">{{ $tm('send') }}</ion-button>
                 <ion-button fill="solid" color="danger">{{ $tm('end') }}</ion-button>
             </ion-buttons>
         </ion-footer>
@@ -77,11 +77,14 @@ const startScan = async () => {
         console.log(lastScannedCode);
         if(lastScannedCode) {
             scannedCodes.value.push(lastScannedCode);
+            console.log('processing');
             try {
+                console.log('trying');
                 await inventoryItems([Number.parseInt(lastScannedCode)], false);
+                console.log('success');
             }
             catch(e) {
-
+                console.log('fail');
             }
         }
         return lastScannedCode;
@@ -137,6 +140,7 @@ const parseQrData = (url: string) => {
 }
 
 const inventoryItems = async (ids: number[], inventoryBatch: boolean) => {
+    console.log('sending');
     const url = globals.appUrl + 'ws/inventarizace_majetku/';
     const authToken = computed(() => store.getters.getAuthToken).value;
     const req: RequestInit = {
@@ -147,8 +151,9 @@ const inventoryItems = async (ids: number[], inventoryBatch: boolean) => {
         },
         body: JSON.stringify({ "kody": ids, "inventarizovat-vsechny-kusy": inventoryBatch })
     }
+    console.log('fetching');
     const res = await fetch(url, req);
-
+    console.log('fethed');
     if(!res.ok) {
         throw res.status;
     }
