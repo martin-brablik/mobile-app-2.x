@@ -60,6 +60,8 @@ const cs = {
     "pause_option": "Pozastavit načítání",
     "click": "Kliknutím",
     "hold": "Podržením",
+    "continue_without_login": "Pokračovat bez přihlášení",
+    "read_more": "Přečíst si více"
 }
 
 export default cs;

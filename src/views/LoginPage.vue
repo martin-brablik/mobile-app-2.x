@@ -14,6 +14,7 @@
             </div>
             <ion-checkbox v-model="remeberCredentialsRef" color="secondary" justify="space-between">{{ $tm('remember') }}</ion-checkbox>
             <ion-button expand="block" color="secondary" type="submit"><ion-icon slot="start" :icon="key"></ion-icon>{{ $tm('sign_in') }}</ion-button>
+            <ion-button type="button" class="btn-clear lowercaseBtn" fill="clear" @click="redirect('');">{{ $tm('continue_without_login') }}</ion-button>
             <ion-button type="button" class="btn-clear lowercaseBtn" fill="clear" @click="redirect('nastaveni_uctu/nove_heslo/');">{{ $tm('forgot_password') }}</ion-button>
             <ion-button type="button" class="lowercaseBtn btn-clear" fill="clear" color="secondary" shape="round" size="small" @click="$router.push('/about')"><ion-icon :icon="informationCircle" slot="start"></ion-icon>{{ $tm('about_app') }}</ion-button>
           </form>

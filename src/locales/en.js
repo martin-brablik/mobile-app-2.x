@@ -60,6 +60,8 @@ const en = {
     "pause_option": "Pause loading on",
     "click": "Click",
     "hold": "Hold",
+    "continue_without_login": "Continue without login",
+    "read_more": "Read more"
 }
 
 export default en;

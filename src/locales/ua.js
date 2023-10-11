@@ -60,6 +60,8 @@ const ua = {
     "pause_option": "Призупинити завантаження",
     "click": "Натиснувши",
     "hold": "Утримуючи",
+    "continue_without_login": "Перейдіть без входу",
+    "read_more": "Докладніше"
 }
 
 export default ua;

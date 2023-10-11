@@ -60,6 +60,8 @@ const sk = {
     "pause_option": "Pozastaviť načítanie",
     "click": "Kliknutím",
     "hold": "Podržaním",
+    "continue_without_login": "Pokračovať bez prihlásenia",
+    "read_more": "Prečítať si viac"
 }
 
 export default sk;

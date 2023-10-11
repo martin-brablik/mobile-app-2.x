@@ -14,12 +14,12 @@
           <article v-if="(localeRef == 'cs' || localeRef == 'sk') && tipsLoadedRef" class="tip ion-padding">
             <h4 ref="didYouKnowHeadingRef">{{ tm('did_you_know') }}</h4>
             <p ref="didYouKnowContentRef">{{ loadingTipRef.nadpis }}</p>
-            <p ref="didYouKnowTextRef" v-if="isLoadingPausedRef">{{ loadingTipRef.text }}</p>
+            <p  :style="isLoadingPausedRef ? '' : 'color: var(--ion-color-medium)'" ref="didYouKnowTextRef">{{ isLoadingPausedRef ? loadingTipRef.text : (tm('read_more') + ' ') }}<ion-icon v-if="!isLoadingPausedRef" :icon="caretDown"></ion-icon></p>
           </article>
           <article v-if="(localeRef == 'cs' || localeRef == 'sk') && !tipsLoadedRef" class="tip ion-padding skeleton">
               <h4><ion-skeleton-text :animated="true" style="width: 11ch;"></ion-skeleton-text></h4>
               <p><ion-skeleton-text :animated="true" style="width: 25ch;"></ion-skeleton-text></p>
-              <p v-if="isLoadingPausedRef"><ion-skeleton-text :animated="true" style="width: 20ch;"></ion-skeleton-text></p>
+              <p><ion-skeleton-text :animated="true" style="width: 11ch;"></ion-skeleton-text></p>
           </article>
         </div>
       </ion-modal>
@@ -30,6 +30,7 @@
 <script setup lang="ts">
 
 import { IonContent, IonPage, IonHeader, IonModal, IonImg, IonSkeletonText, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
+import { caretDown } from 'ionicons/icons';
 import { Ref, ref, onMounted, computed, onUnmounted } from 'vue';
 import { SHA1, MD5, enc } from 'crypto-js';
 import { App } from '@capacitor/app';
@@ -179,7 +180,8 @@ const signOut = (error: string = 'none') => {
 
 const handleMessage = (event: MessageEvent) => {
   console.log(event.data);
-  if(event.data.status === 'loaded' && !reactiveUrlRef.value.includes(globals.logoutQuery)) {
+  if(event.data.status === 'loaded' && !reactiveUrlRef.value.includes(globals.logoutQuery) && route.params.login == 'true' && !getStatus()) {
+    // Poslat požadavek na přihlášení pokud je přenačtena strana a nejde o odhlášení a uživatel se pokusil přihlásit a uživatel není přihlášen
     signIn();
   }
   else if(event.data.status === 'signed in') {
@@ -256,7 +258,7 @@ const updateUrl = (url: string) => {
 
 const fetchTips = async () => {
   try {
-    const response = await fetch(globals.appUrl + '/ws/vite_ze');
+    const response = await fetch(globals.appUrl + 'ws/vite_ze/');
     console.log(response);
     tips = await response.json();
   }
@@ -297,7 +299,7 @@ const pauseLoading = (value: boolean) => {
 
 <style scoped>
 
-ion-header, #main-content {
+ion-header {
   margin-top: var(--ion-safe-area-top) !important;
   margin-top: constant(safe-area-inset-top) !important; /* iOS 11.0 - 11.2 */
   margin-top: env(safe-area-inset-top) !important; /* iOS 11.3+ */
