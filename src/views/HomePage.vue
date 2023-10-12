@@ -105,7 +105,7 @@ onIonViewWillEnter(() => {
     signOut();
   }
 
-  if(!getStatus()) {
+  if(!getStatus() && computed(() => store.getters.getAutoLogin).value) {
     signIn();
   }
 
