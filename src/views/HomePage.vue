@@ -105,10 +105,6 @@ onIonViewWillEnter(() => {
     signOut();
   }
 
-  if(!getStatus() && computed(() => store.getters.getAutoLogin).value) {
-    signIn();
-  }
-
   console.log('status: ' + getStatus());
   if(route.params.login == 'true' && !getStatus()) {
     startLoading();
