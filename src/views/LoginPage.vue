@@ -26,7 +26,7 @@
 <script setup lang="ts">
 
 import { IonContent, IonPage, IonInput, IonButton, IonCheckbox, IonImg, IonIcon, useIonRouter, onIonViewWillEnter } from '@ionic/vue';
-import { key, informationCircle, helpCircle, returnDownForward } from 'ionicons/icons';
+import { key, informationCircle, helpCircle } from 'ionicons/icons';
 import { useStore } from 'vuex';
 import bg_login from '@/assets/images/bg_login.png';
 import iZUS_pruhl from '@/assets/images/iZUS_pruhl.png';
@@ -34,6 +34,7 @@ import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { globals } from '@/globals';
+import { Network } from '@capacitor/network';
 
 const router = useIonRouter();
 const route = useRoute();
@@ -53,8 +54,13 @@ onIonViewWillEnter(() => {
   store.dispatch('updateIsSignedIn', false);
 });
 
-const signIn = (e: Event) => {
+const signIn = async (e: Event) => {
   e.preventDefault();
+  
+  if(!(await isOnline())) {
+    router.replace({ name: 'login', params: { error: 'offline' } });
+    return;
+  }
 
   store.dispatch('updateUsername', usernameRef.value.trim());
   store.dispatch('updatePassword', passwordRef.value.trim());
@@ -73,10 +79,20 @@ const signIn = (e: Event) => {
   router.push({ name: 'home', params: {login: true} });
 }
 
-const redirect = (path: string) => {
+const redirect = async (path: string) => {
+  if(!(await isOnline())) {
+    router.replace({ name: 'login', params: { error: 'offline' } });
+    return;
+  }
+
   const url = globals.appUrl + path;
   store.dispatch('updateUrl', url);
   router.push({name: 'home', params: { login: false }});
+}
+
+const isOnline = async () => {
+  const networkStatus = await Network.getStatus();
+  return networkStatus.connected;
 }
 
 </script>

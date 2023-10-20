@@ -2,7 +2,15 @@
   <ion-page>
     <ion-content id="main-content" :scroll-events="true">
       <div style="height: 100%; width: 100%;">
-        <iframe class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
+        <iframe v-if="isOnlineRef" class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
+        <div id="offline-page" class="ion-padding" :style="{ display: isOnlineRef ? 'none' : 'flex'}">
+          <img :src="iZUS_pruhl" alt="" >
+          <ion-button shape="round" @click="restoreConnection()"><ion-icon slot="icon-only" :icon="refresh"></ion-icon></ion-button>
+          <article id="offline-text">
+            <img :src="wifi_off" alt="" width="32" height="32">
+            <p>{{ $tm('offline') }}</p>
+          </article>
+        </div>
       </div>
       <ion-modal :isOpen="isLoadingOpenRef" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
         <div class="loading">
@@ -23,17 +31,18 @@
 
 <script setup lang="ts">
 
-import { IonContent, IonPage, IonModal, IonImg, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave, onIonViewDidLeave } from '@ionic/vue';
-import { Ref, ref, onMounted, computed, onUnmounted } from 'vue';
+import { IonContent, IonPage, IonModal, IonImg, IonButton, IonIcon, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
+import { refresh } from 'ionicons/icons'
+import { Ref, ref, onMounted, computed } from 'vue';
 import { SHA1, MD5, enc } from 'crypto-js';
 import { App } from '@capacitor/app';
 import store from '@/store';
 import { useRoute } from 'vue-router';
 import { globals } from '@/globals';
 import iZUS_pruhl from '@/assets/images/iZUS_pruhl.png';
+import wifi_off from '@/assets/images/wifi_off.svg';
 import { useI18n } from 'vue-i18n';
-import { Md5 } from 'ts-md5';
-import { terminal } from 'ionicons/icons';
+import { Network } from '@capacitor/network'
 
 const props = defineProps({
   login: {
@@ -65,8 +74,10 @@ const didYouKnowContentRef: Ref<HTMLElement | undefined> = ref();
 const didYouKnowTextRef: Ref<HTMLElement | undefined> = ref();
 const isLoadingPausedRef = ref(false);
 const ringRef : Ref<HTMLElement | undefined> = ref();
+const isOnlineRef = ref(true);
 
 onMounted(() => {
+  console.log('mounted');
   izusRef.value.addEventListener('load', () => {
     izusRef.value.contentWindow?.postMessage({ setCookie: true }, '*');
   });
@@ -80,6 +91,10 @@ onMounted(() => {
   App.addListener('backButton', () => {
     izusRef.value?.contentWindow?.history.back();
   });
+
+  Network.addListener('networkStatusChange', status => {
+    isOnlineRef.value = status.connected;
+  })
 });
 
 onIonViewWillEnter(() => {
@@ -92,7 +107,6 @@ onIonViewWillEnter(() => {
 
   loginAttempt = 1;
   console.log('entered');
-  console.log(izusRef.value.src);
 
   if(reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signOut();
@@ -100,7 +114,7 @@ onIonViewWillEnter(() => {
 
   console.log('status: ' + getStatus());
   if(route.params.login == 'true' && !getStatus()) {
-    startLoading();
+    //startLoading();
     setTimeout(() => {
       console.log('timeout');
       stopLoading();
@@ -310,9 +324,24 @@ const pauseLoading = (value: boolean) => {
   }
 }
 
+const restoreConnection = async () => {
+  const status = await Network.getStatus();
+  isOnlineRef.value = status.connected;
+}
+
 </script>
 
 <style scoped>
+
+#offline-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  gap: 2em;
+}
 
 ion-modal {
   .modal-wrapper {
@@ -375,6 +404,7 @@ ion-modal {
     justify-content: center;
     width: 99%;
     height: 100%;
+    border: none;
   }
 
   ion-modal {
