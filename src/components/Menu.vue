@@ -22,7 +22,7 @@
                     <ion-icon :icon="home" slot="start"></ion-icon>
                     <ion-label>{{ tm('main_page') }}</ion-label>
                 </ion-item>
-                <ion-item v-if="/*isSigneInRef && userPermRef >= 5 && nfInventoryRef*/true" @click="push('/inventory')">
+                <ion-item v-if="/*isSigneInRef && userPermRef >= 5 && nfInventoryRef*/true" @click="router.push('/inventory')">
                     <ion-icon :icon="checkmark" slot="start"></ion-icon>
                     <ion-label>{{ $tm('inventory') }}</ion-label>
                 </ion-item>

@@ -16,7 +16,7 @@ const en = {
     "pause": "Pause",
     "resume": "Resume",
     "send": "Send",
-    "end": "End",
+    "erase": "Erase",
     "login_title": "Sign In",
     "username": "Username",
     "password": "Password",
@@ -81,7 +81,15 @@ const en = {
     "help_redirect": "You will be redirected to iZUŠ Help. Do you wish to continue?",
     "inventory_result": "Inventory result",
     "inventory_success": "All items have been successfully inventoried",
-    "inventory_fail": "Some items could not be inventoried"
+    "inventory_fail": "Some items could not be inventoried",
+    "yes": "Yes",
+    "no": "No",
+    "error": "Error",
+    "error_processing_item": "Error while processing item",
+    "inventory_interrupt": "You are about to interrupt the inventory",
+    "save_inventory": "Do you wish to save the current list?",
+    "erase_inventory": "Do you wish to erase the current list?",
+    "no_effect": "This will not affect the scanned items",
 }
 
 export default en;

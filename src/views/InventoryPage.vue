@@ -1,35 +1,38 @@
 <template>
     <ion-page>
         <Toolbar :page-title="$tm('property_inventory').toString()" :display-menu-button="false" />
+        <audio ref="beepSuccessRef" :src="beep1"></audio>
+        <audio ref="beepFailRef" :src="beep2"></audio>
         <ion-content id="window">
             <ion-buttons id="controls">
                 <ion-button @click="BarcodeScanner.toggleTorch(); isTorchEnabledRef = !isTorchEnabledRef;" slot="icon-only">
                     <ion-icon :icon="isTorchEnabledRef ? flash : flashOutline" size="large"></ion-icon>
                 </ion-button>
-                <ion-button @click="toggleHelp" slot="icon-only">
+                <ion-button @click="alertHelp" slot="icon-only">
                     <ion-icon :icon="helpCircle" size="large"></ion-icon>
                 </ion-button>
             </ion-buttons>
-            <ion-alert :isOpen="isDialogOpenRef" :header="alertHeaderRef" :message="alertMessageRef" :buttons="dialogButtons"></ion-alert>
-            <ion-alert :isOpen="isAlertOpenRef" :header="alertHeaderRef" :message="alertMessageRef" :buttons="alertButtons"></ion-alert>
+            <ion-alert :isOpen="isLeaveDialogOpenRef" :header="alertHeaderRef" :message="alertMessageRef" :buttons="leaveDialogButtons"></ion-alert>
+            <ion-alert :isOpen="isEraseDialogOpenRef" :header="alertHeaderRef" :message="alertMessageRef" :buttons="eraseDialogButtons"></ion-alert>
+            <ion-alert :isOpen="isHelpDialogOpenRef" :header="alertHeaderRef" :message="alertMessageRef" :buttons="helpDialogButtons"></ion-alert>
+            <ion-alert :isOpen="isAlertOpenRef" :header="alertHeaderRef" :subHeader="alertSubheaderRef" :message="alertMessageRef" :buttons="alertButtons"></ion-alert>
         </ion-content>
         <ion-footer class="ion-padding">
             <ion-content id="list">
                 <ion-list lines="inset" :scrollY="true">
-                    <ion-item v-for="(code) in scannedCodes" :button="true" @click="showDetail(code)">
+                    <ion-item v-for="(code) in scannedCodes" :button="true" @click="alertDetail(code)">
                         <ion-icon v-if="code.state.state == State.PENDING" slot="start" :icon="time"></ion-icon>
                         <ion-icon v-if="code.state.state == State.MULTIPLE" slot="start" color="warning" :icon="checkmarkCircle"></ion-icon>
                         <ion-icon v-if="code.state.state == State.SUCCESS" slot="start" color="success" :icon="checkmarkCircle"></ion-icon>
-                        <ion-icon v-if="code.state.state == State.FAIL" slot="start" color="danger" :icon="closeCircle"></ion-icon>
+                        <ion-icon v-if="code.state.state == State.FAIL" slot="start" color="danger" :icon="alertCircle"></ion-icon>
                         <ion-label>{{ code.item.nazev_majetku ? code.item.nazev_majetku : (code.state.state == State.PENDING ? 'Čeká se na spojení' : 'Neznámý majetek') }}</ion-label>
-                        <ion-note slot="end">{{ formatDate(code.item.datum_a_cas) }}</ion-note>
                     </ion-item>
                 </ion-list>
             </ion-content>
             <ion-buttons>
-                <ion-button fill="solid" color="primary" @click="isScanningPausedRef ? resume() : pause()">{{ $tm('pause') }}</ion-button>
+                <ion-button fill="solid" color="primary" @click="isScanningPausedRef ? resume() : pause()">{{ $tm(isScanningPausedRef ? 'resume' : 'pause') }}</ion-button>
                 <ion-button fill="solid" color="secondary" @click="send()" :disabled="scannedCodes.length == 0">{{ $tm('send') }}</ion-button>
-                <ion-button fill="solid" color="danger">{{ $tm('end') }}</ion-button>
+                <ion-button fill="solid" color="danger" @click="alertErase()" :disabled="scannedCodes.length == 0">{{ $tm('erase') }}</ion-button>
             </ion-buttons>
         </ion-footer>
     </ion-page>
@@ -37,24 +40,30 @@
 
 <script setup lang="ts">
 
-import { IonPage, IonContent, IonFooter, IonButtons, IonButton, IonList, IonItem, IonLabel, IonIcon, IonNote, IonAlert, useIonRouter, onIonViewWillEnter } from '@ionic/vue';
-import { time, checkmarkCircle, closeCircle, flash, flashOutline, helpCircle } from 'ionicons/icons';
+import { IonPage, IonContent, IonFooter, IonButtons, IonButton, IonList, IonItem, IonLabel, IonIcon, IonAlert, useIonRouter, onIonViewWillEnter, onIonViewWillLeave } from '@ionic/vue';
+import { time, checkmarkCircle, alertCircle, flash, flashOutline, helpCircle } from 'ionicons/icons';
 import { BarcodeScanner, SupportedFormat } from '@capacitor-community/barcode-scanner';
 import { computed, onMounted, ref, Ref } from 'vue';
-import { App } from '@capacitor/app';
 import Toolbar from '@/components/Toolbar.vue'
 import { globals } from '@/globals';
 import store from '@/store';
 import { Network } from '@capacitor/network';
 import { useI18n } from 'vue-i18n';
+import beep1 from '@/assets/audio/beep1.mp3';
+import beep2 from '@/assets/audio/beep2.mp3';
 
 const scannedCodes: Ref<Code[]> = ref(new Array<Code>());
 const alertHeaderRef = ref('');
+const alertSubheaderRef = ref('');
 const alertMessageRef = ref('');
 const isAlertOpenRef = ref(false);
-const isDialogOpenRef = ref(false);
+const isHelpDialogOpenRef = ref(false);
+const isEraseDialogOpenRef = ref(false);
+const isLeaveDialogOpenRef = ref(false);
 const isTorchEnabledRef = ref(false);
 const isScanningPausedRef = ref(false);
+const beepSuccessRef = ref();
+const beepFailRef = ref();
 
 const { tm } = useI18n();
 
@@ -75,7 +84,7 @@ class Item  {
     ) {}
 }
 
-type Code = {
+export type Code = {
     state: { state: State, statusMessage: string },
     item: Item
 }
@@ -92,51 +101,86 @@ const alertButtons = [
         }
     }
 ];
-const dialogButtons = [
+const helpDialogButtons = [
     {
-        text: 'OK',
-        role: 'confirm',
+        text: tm('cancel'),
+        role: 'cancel',
         handler: () => {
-            isDialogOpenRef.value = false;
+            isHelpDialogOpenRef.value = false;
             BarcodeScanner.hideBackground();
             document.querySelector('body')?.classList.add('scanner-active');
         }
     },
     {
+        text: 'OK',
+        role: 'confirm',
+        handler: () => {
+            isHelpDialogOpenRef.value = false;
+            BarcodeScanner.hideBackground();
+            document.querySelector('body')?.classList.add('scanner-active');
+            store.dispatch('updateUrl', globals.appUrl + 'o_izus/napoveda/?returnUri=%2Findex.php#clanek_napovedy785-1/');
+            router.push({ name: 'home', params: { login: false } });
+        }
+    }
+];
+const eraseDialogButtons = [
+    {
         text: tm('cancel'),
         role: 'cancel',
         handler: () => {
-            isDialogOpenRef.value = false;
+            isHelpDialogOpenRef.value = false;
             BarcodeScanner.hideBackground();
             document.querySelector('body')?.classList.add('scanner-active');
+        }
+    },
+    {
+        text: 'OK',
+        role: 'confirm',
+        handler: () => {
+            isHelpDialogOpenRef.value = false;
+            BarcodeScanner.hideBackground();
+            document.querySelector('body')?.classList.add('scanner-active');
+            scannedCodes.value = new Array<Code>();
+            store.dispatch('updateScannedCodes', []);
+        }
+    }
+];
+const leaveDialogButtons = [
+    {
+        text: tm('no'),
+        role: 'cancel',
+        handler: () => {
+            isEraseDialogOpenRef.value = false;
+            store.dispatch('updateScannedCodes', []);
+        }
+    },
+    {
+        text: tm('yes'),
+        role: 'confirm',
+        handler: () => {
+            isEraseDialogOpenRef.value = false;
+            store.dispatch('updateScannedCodes', scannedCodes.value);
         }
     }
 ];
 
 onMounted(() => {
-    console.log('mounted');
-    console.log(lastScannedCode);
-    App.addListener('pause', () => {
-        BarcodeScanner.showBackground();
-        document.querySelector('body')?.classList.remove('scanner-active');
-    });
-    App.addListener('resume', () => {
-        /*console.log('resumed');
-        BarcodeScanner.hideBackground();
-        document.querySelector('body')?.classList.add('scanner-active');*/
-    });
-
-    Network.addListener('networkStatusChange', status => {
+    Network.addListener('networkStatusChange', async status => {
         if(status.connected) {
-            processPendingItems();
+            await processPendingItems();
         }
     });
-
-    initiate();
 });
 
 onIonViewWillEnter(() => {
     BarcodeScanner.disableTorch();
+    scannedCodes.value = computed(() => store.getters.getScannedCodes).value;
+    console.log(scannedCodes.value);
+    initiate();
+});
+
+onIonViewWillLeave(() => {
+    alertLeave();
 });
 
 const initiate = async () => {
@@ -153,18 +197,18 @@ const initiate = async () => {
 const prepare = async () => {
     await BarcodeScanner.prepare();
     await startScan();
-    setTimeout(prepare, 250);
+    setTimeout(async () => await prepare(), 250);
 };
 
 const startScan = async () => {
+
     if(isTorchEnabledRef.value) {
-        BarcodeScanner.enableTorch();
+        await BarcodeScanner.enableTorch();
     }
     else {
-        BarcodeScanner.disableTorch();
+        await BarcodeScanner.disableTorch();
     }
 
-    console.log("started scan");
     document.querySelector('body')?.classList.add('scanner-active');
     BarcodeScanner.hideBackground();
 
@@ -175,7 +219,6 @@ const startScan = async () => {
     }
 
     lastScannedCode = parseQrData(result.content);
-    console.log(lastScannedCode);
 
     if (!lastScannedCode) {
         return;
@@ -183,11 +226,11 @@ const startScan = async () => {
 
     const time = new Date();
     const year = time.getFullYear();
-    const month = (time.getMonth() + 1).toString().padStart(2, '0');
-    const day = (time.getDay() + 1).toString().padStart(2, '0');
-    const hours = (time.getHours() + 1).toString().padStart(2, '0');
-    const minutes = (time.getMinutes() + 1).toString().padStart(2, '0');
-    const seconds = (time.getSeconds() + 1).toString().padStart(2, '0');
+    const month = (time.getMonth() + 1).toString();
+    const day = (time.getDay() + 1).toString();
+    const hours = (time.getHours() + 1).toString();
+    const minutes = (time.getMinutes() + 1).toString();
+    const seconds = (time.getSeconds() + 1).toString();
 
     let code: Code = {
         state: {
@@ -202,27 +245,33 @@ const startScan = async () => {
     }
 
     if(scannedCodes.value.find(c => c.item.id_majetku == code.item.id_majetku)) {
+        scanFlash(false);
         return;
     }
 
     scannedCodes.value.push(code);
+    await BarcodeScanner.prepare();
 
     try {
         code.state.state = State.PENDING;
         if ((await Network.getStatus()).connected) {
-            code = await inventoryItem(code, false);
+            code = await inventoryItem(code);
             scannedCodes.value.pop();
             scannedCodes.value.push(code);
+            scanFlash(code.state.state == State.SUCCESS);
+            store.dispatch('updateScannedCodes', scannedCodes.value);
         }
     }
     catch (e) {
-        console.log('fail');
+        alertHeaderRef.value = 'Chyba';
+        alertMessageRef.value = 'Položku se nepodařilo zpracovat';
+        isAlertOpenRef.value = true;
     }
 
     return lastScannedCode;
 };
 
-const inventoryItem = async (code: Code, inventoryBatch: boolean): Promise<Code> => {
+const inventoryItem = async (code: Code, inventoryBatch = true): Promise<Code> => {
     const url = globals.appUrl + 'ws/inventarizace_majetku/';
     const authToken = computed(() => store.getters.getAuthToken).value;
     const req: RequestInit = {
@@ -233,39 +282,44 @@ const inventoryItem = async (code: Code, inventoryBatch: boolean): Promise<Code>
         },
         body: JSON.stringify({ "kody": [code.item], "inventarizovat-vsechny-kusy": inventoryBatch })
     }
-    console.log('fetching');
     const res = await fetch(url, req);
-    console.log('fethed');
     console.log(res)
 
     if (!res.ok) {
         code.state.state = State.ERROR;
-        //chybová zpráva pro uživatele
+        alertHeaderRef.value = tm('error');
+        alertMessageRef.value = tm('error_processing_item');
+        isAlertOpenRef.value = true;
         throw res.status;
     }
 
     const result = await res.json();
-    console.log(result);
 
     switch (result.kody[0].vysledek_inventarizace) {
         case 0:
             code.state.statusMessage = tm('new_item');
             code.state.state = State.FAIL;
+            break;
         case 1:
             code.state.statusMessage = tm('not_signed_in')/*'Uživatel není přihlášený'*/;
             code.state.state = State.FAIL;
+            break;
         case 2:
             code.state.statusMessage = tm('inventory_not_enabled')/*'Není zapnuta nadstandardní funkce Evidence majetku'*/;
             code.state.state = State.FAIL;
+            break;
         case 3:
             code.state.statusMessage = tm('no_permission')/*'Uživatel nemá dostatečná oprávnění'*/;
             code.state.state = State.FAIL;
+            break;
         case 4:
             code.state.statusMessage = tm('inventory_not_initiated')/*'Neprobíhá inventarizace'*/;
             code.state.state = State.FAIL;
+            break;
         case 6:
             code.state.statusMessage = tm('multiple_items')/*'Majetek obsahuje více kusů'*/;
             code.state.state = State.MULTIPLE;
+            break;
         case 11:
             code.state.statusMessage = tm('multiple_items_canceled')/*'Inventář více položek byl zrušen'*/;
             code.state.state = State.FAIL;
@@ -298,12 +352,14 @@ const inventoryItem = async (code: Code, inventoryBatch: boolean): Promise<Code>
 }
 
 const processPendingItems = async () => {
-    scannedCodes.value.filter(c => c.state.state == State.PENDING).forEach(code => {
-        try {
-            inventoryItem(code, false);
-        }
-        catch(e) {}
-    });
+    try {
+        scannedCodes.value.filter(c => c.state.state == State.PENDING).forEach(async (code) => {
+            await inventoryItem(code);
+        });
+    }
+    catch(e) {
+        console.log('nothing to process');
+    }
 }
 
 const stopScan = () => {
@@ -354,31 +410,51 @@ const parseQrData = (url: string) => {
     return match ? match[0] : undefined;
 }
 
-const showDetail = (code: Code) => {
+const alertDetail = (code: Code) => {
     BarcodeScanner.showBackground();
     document.querySelector('body')?.classList.remove('scanner-active');
     alertHeaderRef.value = code.item.nazev_majetku?? tm('unknown_item');
+    alertSubheaderRef.value = formatDate(code.item.datum_a_cas);
     alertMessageRef.value = code.state.statusMessage;
     isAlertOpenRef.value = true;
 }
 
-const toggleHelp = () => {
+const alertHelp = () => {
     BarcodeScanner.showBackground();
     document.querySelector('body')?.classList.remove('scanner-active');
     alertHeaderRef.value = tm('property_inventory');
     alertMessageRef.value = tm('help_redirect');
-    isDialogOpenRef.value = true;
+    isHelpDialogOpenRef.value = true;
 }
 
-const pause = () => {
+const alertErase = () => {
+    console.log('erase');
+    BarcodeScanner.showBackground();
+    document.querySelector('body')?.classList.remove('scanner-active');
+    alertHeaderRef.value = tm('erase_inventory');
+    alertMessageRef.value = tm('no_effect');
+    isEraseDialogOpenRef.value = true;
+}
+
+const alertLeave = () => {
+    BarcodeScanner.showBackground();
+    document.querySelector('body')?.classList.remove('scanner-active');
+    alertHeaderRef.value = tm('inventory_interrupt');
+    alertMessageRef.value = tm('save_inventory');
+    isLeaveDialogOpenRef.value = true;
+}
+
+const pause = async () => {
     isScanningPausedRef.value = true;
-    stopScan();
-    console.log('pause');
+    await BarcodeScanner.pauseScanning();
+    BarcodeScanner.showBackground();
+    document.querySelector('body')?.classList.remove('scanner-active');
 }
 const resume = async () => {
-    console.log('resume');
     isScanningPausedRef.value = false;
-    await prepare();
+    await BarcodeScanner.resumeScanning();
+    BarcodeScanner.hideBackground();
+    document.querySelector('body')?.classList.add('scanner-active');
 }
 
 const send = async () => {
@@ -386,7 +462,7 @@ const send = async () => {
     BarcodeScanner.showBackground();
     document.querySelector('body')?.classList.remove('scanner-active');
     alertHeaderRef.value = tm('inventory_result');
-    alertMessageRef.value = tm(scannedCodes.value.find(c => c.state.state == State.PENDING) ? 'inventory_fail' : 'inventory_success');
+    alertMessageRef.value = tm(scannedCodes.value.find(c => c.state.state == State.PENDING || c.state.state == State.FAIL || c.state.state == State.ERROR) ? 'inventory_fail' : 'inventory_success');
     isAlertOpenRef.value = true;
 }
 
@@ -396,6 +472,17 @@ const formatDate = (dateTimeStr: string) => {
     const time = dateTime[1].split(':');
     
     return `${date[2]}.${date[1]}.${date[0]} ${time[0]}:${time[1]}`;
+}
+
+const sleep = async (ms: number) => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const scanFlash = async (scanResult: boolean) => {
+    const beep = scanResult ? beepSuccessRef.value : beepFailRef.value;
+
+    beep.play();
+    navigator.vibrate([scanResult ? 100 : 500]);
 }
 
 </script>

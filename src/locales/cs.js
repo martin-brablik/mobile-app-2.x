@@ -16,7 +16,7 @@ const cs = {
     "pause": "Pauza",
     "resume": "Pokračovat",
     "send": "Odeslat",
-    "end": "Ukončit",
+    "erase": "Vymazat",
     "login_title": "Přihlášení",
     "username": "Uživatelské jméno",
     "password": "Heslo",
@@ -82,6 +82,14 @@ const cs = {
     "inventory_result": "Výsledek inventarizace",
     "inventory_success": "Všechny položky byly úspěšně zainventarizovány",
     "inventory_fail": "Některé položky se nepodařilo zainventarizovat",
+    "yes": "Ano",
+    "no": "Ne",
+    "error": "Chyba",
+    "error_processing_item": "Položku se nepodařilo zpracovat",
+    "inventory_interrupt": "Chystáte se přerušit inventarizaci",
+    "save_inventory": "Přejete si uložit aktuální seznam?",
+    "erase_inventory": "Přejete si vymazat aktuální seznam?",
+    "no_effect": "Tato akce nijak neovlivní naskenované položky",
 }
 
 export default cs;

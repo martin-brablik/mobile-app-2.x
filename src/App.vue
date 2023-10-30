@@ -1,6 +1,6 @@
 <template>
   <ion-app>
-    <biometrics ref="biometricsRef" @on-authenticated="hideBackground" />
+    <biometrics ref="biometricsRef" @on-authenticated="hideBackground" @on-auth-requested="showBackground" />
     <ion-router-outlet id="main-content"></ion-router-outlet>
     <Menu v-if="hasMenu" />
   </ion-app>
@@ -14,7 +14,6 @@ import { App } from '@capacitor/app';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 import Biometrics from '@/components/Biometrics.vue';
 import Menu from '@/components/Menu.vue';
-import { useRoute } from 'vue-router';
 import { ScreenOrientation } from '@awesome-cordova-plugins/screen-orientation';
 import router from './router';
 import { globals } from './globals';
@@ -30,8 +29,6 @@ export default defineComponent({
   },
   setup() {
     const biometricsRef = ref<typeof Biometrics | null>(null);  
-    const route = useRoute();
-    const currentRoute = route.path;
 
     onMounted(() => {
       globals.appUrl = `https://www.izus.${navigator.language == 'sk' ? 'sk' : 'cz'}/`;
@@ -68,14 +65,25 @@ export default defineComponent({
       }
     }
 
-    const hideBackground = () => {
-      if (currentRoute == '/inventory') {
-        BarcodeScanner.hideBackground();
+    const hideBackground = async () => {
+      const route = computed(() => router.currentRoute.value.path).value;
+      if (route == '/inventory') {
+        await BarcodeScanner.resumeScanning();
+        await BarcodeScanner.hideBackground();
         document.querySelector('body')?.classList.add('scanner-active');
       }
     }
 
-    return { biometricsRef, currentRoute, hideBackground };
+    const showBackground = async () => {
+      const route = computed(() => router.currentRoute.value.path).value;
+      if(route == '/inventory') {
+        await BarcodeScanner.pauseScanning();
+        await BarcodeScanner.showBackground();
+        document.querySelector('body')?.classList.remove('scanner-active');
+      }
+    }
+
+    return { biometricsRef, hideBackground, showBackground };
 
   }
 });

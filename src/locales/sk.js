@@ -16,7 +16,7 @@ const sk = {
     "pause": "Pauza",
     "resume": "Pokračovať",
     "send": "Odoslať",
-    "end": "Ukončiť",
+    "erase": "Vymazať",
     "login_title": "Prihlásenie",
     "username": "Uživatelské meno",
     "password": "Heslo",
@@ -81,7 +81,15 @@ const sk = {
     "help_redirect": "Budete presmerovaní do nápovedy iZUŠ. Prajete si pokračovať?",
     "inventory_result": "Výsledok inventarizácie",
     "inventory_success": "Všetky položky boli úspešne zainventarizované",
-    "inventory_fail": "Niektoré položky sa nepodarilo zainventarizovať"
+    "inventory_fail": "Niektoré položky sa nepodarilo zainventarizovať",
+    "yes": "Áno",
+    "no": "Nie",
+    "error": "Chyba",
+    "error_processing_item": "Položku sa nepodarilo spracovať",
+    "inventory_interrupt": "Chystáte sa prerušiť inventarizáciu",
+    "save_inventory": "Prajete si uložiť aktuálny zoznam?",
+    "erase_inventory": "Prajete si vymazať aktuálny zoznam?",
+    "no_effect": "Táto akcia nijako neovplyvní naskenované položky",
 }
 
 export default sk;
