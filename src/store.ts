@@ -12,6 +12,10 @@ export default createStore({
         username: localStorage.getItem('username') || '',
         password: localStorage.getItem('password') || '',
         autoLogin: JSON.parse(localStorage.getItem('autoLogin') || 'false'),
+        authToken: '',
+        userPerm: 0,
+        nfInventory: 0,
+        scannedCodes: JSON.parse(localStorage.getItem('scannedCodes') || '[]'),
     },
     mutations: {
         setUrl(state, url) {
@@ -47,6 +51,19 @@ export default createStore({
             state.autoLogin = autoLogin;
             localStorage.setItem('autoLogin', autoLogin);
         },
+        setAuthToken(state, authToken) {
+            state.authToken = authToken;
+        },
+        setUserPerm(state, userPerm) {
+            state.userPerm = userPerm;
+        },
+        setNfInventory(state, nfInventory) {
+            state.nfInventory = nfInventory;
+        },
+        setScannedCodes(state, scannedCodes) {
+            state.scannedCodes = scannedCodes;
+            localStorage.setItem('scannedCodes', JSON.stringify(scannedCodes));
+        }
     },
     actions: {
         updateUrl({ commit }, url) {
@@ -76,6 +93,18 @@ export default createStore({
         updateAutoLogin({ commit }, autoLogin) {
             commit('setAutoLogin', autoLogin);
         },
+        updateAuthToken({ commit }, authToken) {
+            commit('setAuthToken', authToken);
+        },
+        updateUserPerm({ commit }, userPerm) {
+            commit('setUserPerm', userPerm);
+        },
+        updateNfInventory({ commit }, nfInventory) {
+            commit('setNfInventory', nfInventory);
+        },
+        updateScannedCodes({ commit }, scannedCodes) {
+            commit('setScannedCodes', scannedCodes);
+        }
     },
     getters: {
         getUrl: state => state.url,
@@ -87,5 +116,9 @@ export default createStore({
         getUsername: state => state.username,
         getPassword: state => state.password,
         getAutoLogin: state => state.autoLogin,
+        getAuthToken: state => state.authToken,
+        getUserPerm: state => state.userPerm,
+        getNfInventory: state => state.nfInventory,
+        getScannedCodes: state => state.scannedCodes,
     }
 });

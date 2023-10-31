@@ -6,8 +6,17 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'http',
-    url: 'https://izustest.8u.cz/'
+    url: 'https://m.izus.cz/'
   },
+  plugins: {
+    SplashScreen: {
+      launchAutoHide: false,
+      androidScaleType: 'CENTER_CROP',
+      splashFullScreen: true,
+      splashImmersive: false,
+      backgroundColor: '#FFFFFF',
+    }
+  }
 };
 
 export default config;

@@ -3,7 +3,15 @@
     <ion-header></ion-header>
     <ion-content id="main-content" :scroll-events="true" safe-area>
       <div style="height: 100%; width: 100%;">
-        <iframe class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
+        <iframe v-if="isOnlineRef" class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
+        <div id="offline-page" class="ion-padding" :style="{ display: isOnlineRef ? 'none' : 'flex'}">
+          <img :src="iZUS_pruhl" alt="" >
+          <ion-button shape="round" @click="restoreConnection()"><ion-icon slot="icon-only" :icon="refresh"></ion-icon></ion-button>
+          <article id="offline-text">
+            <img :src="wifi_off" alt="" width="32" height="32">
+            <p>{{ $tm('offline') }}</p>
+          </article>
+        </div>
       </div>
       <ion-modal :isOpen="isLoadingOpenRef" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
         <div class="loading">
@@ -30,7 +38,7 @@
 <script setup lang="ts">
 
 import { IonContent, IonPage, IonHeader, IonModal, IonImg, IonSkeletonText, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
-import { caretDown } from 'ionicons/icons';
+import { caretDown, refresh } from 'ionicons/icons';
 import { Ref, ref, onMounted, computed, onUnmounted } from 'vue';
 import { SHA1, MD5, enc } from 'crypto-js';
 import { App } from '@capacitor/app';
@@ -38,7 +46,9 @@ import store from '@/store';
 import { useRoute } from 'vue-router';
 import { globals } from '@/globals';
 import iZUS_pruhl from '@/assets/images/iZUS_pruhl.png';
+import wifi_off from '@/assets/images/wifi_off.svg';
 import { useI18n } from 'vue-i18n';
+import { Network } from '@capacitor/network'
 
 const props = defineProps({
   login: {
@@ -71,6 +81,7 @@ const didYouKnowTextRef: Ref<HTMLElement | undefined> = ref();
 const isLoadingPausedRef = ref(false);
 const ringRef : Ref<HTMLElement | undefined> = ref();
 const tipsLoadedRef = ref(false);
+const isOnlineRef = ref(true);
 
 onMounted(() => {
   izusRef.value.addEventListener('load', () => {
@@ -86,6 +97,10 @@ onMounted(() => {
   App.addListener('backButton', () => {
     izusRef.value?.contentWindow?.history.back();
   });
+
+  Network.addListener('networkStatusChange', status => {
+    isOnlineRef.value = status.connected;
+  })
 });
 
 onIonViewWillEnter(() => {
@@ -98,18 +113,14 @@ onIonViewWillEnter(() => {
   tipsLoadedRef.value = false;
 
   loginAttempt = 1;
-  console.log('entered');
-  console.log(izusRef.value.src);
 
   if(reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signOut();
   }
 
-  console.log('status: ' + getStatus());
   if(route.params.login == 'true' && !getStatus()) {
     startLoading();
     setTimeout(() => {
-      console.log('timeout');
       stopLoading();
     }, 20000);
   }
@@ -124,13 +135,11 @@ onIonViewDidEnter(async () => {
   await returnTips();
 
   tipsLoadedRef.value = true;
-  console.log('tips loaded');
   if(didYouKnowHeadingRef.value && loadingTipRef.value.nadpis) {
     didYouKnowHeadingRef.value.innerText = tm('did_you_know');
   }
 
   if(didYouKnowContentRef.value) {
-    console.log('loadingTipRef: ' + loadingTipRef.value)
     didYouKnowContentRef.value.innerText = loadingTipRef.value ? loadingTipRef.value.nadpis : '';
   }
 
@@ -146,12 +155,14 @@ onIonViewWillLeave(() => {
   stopLoading();
 });
 
+const hashPassword = (username: string, password: string, salt: string) => SHA1(MD5(enc.Latin1.parse(password + username)).toString().toLocaleLowerCase('sk-SK') + salt).toString().toLocaleLowerCase('sk-SK');
+
 const getSignInPost = () => {
   const validateCredential = (credential: string | undefined | null) => credential && credential.length != 0 && credential !== '' ? credential : null;
   const username = validateCredential(usernameRef.value) ?? 'neexistujici_uzivatel';
   const password = validateCredential(passwordRef.value) ?? 'neexistujici_heslo';
   const sugar = Math.floor(Math.random() * 900000) + 100000;
-  const password_hmac = SHA1(MD5(enc.Latin1.parse(password + username)).toString().toLocaleLowerCase('sk-SK') + sugar).toString().toLocaleLowerCase('sk-SK');
+  const password_hmac = hashPassword(username, password, sugar.toString());
   const postData = { sugar: sugar, password_hmac: password_hmac, username: username, prepassword: 'Heslo' };
 
   return postData;
@@ -167,21 +178,41 @@ const signIn = () => {
   }
 };
 
+const signInApi = async () => {	
+  const url = globals.appUrl + 'ws/api/login/';
+  const timestamp = new Date().getTime();
+  const password_hmac = hashPassword(usernameRef.value, passwordRef.value, timestamp.toString());
+  const data = {
+    username: usernameRef.value,
+    password: password_hmac,
+    salt: timestamp
+  };
+  const req: RequestInit = {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    }
+  } 
+  const res = await fetch(url, req);
+  const apiKey = await res.json();
+
+  store.dispatch('updateAuthToken', apiKey.access_token);
+}
+
 const signOut = (error: string = 'none') => {
-  console.log('signOut');
   updateStatus(false);
   updateUrl(globals.appUrl + globals.logoutQuery);
   router.push({ name: 'login', params: { error: error } });
 };
 
-const handleMessage = (event: MessageEvent) => {
-  console.log(event.data);
+const handleMessage = async (event: MessageEvent) => {
   if(event.data.status === 'loaded' && !reactiveUrlRef.value.includes(globals.logoutQuery) && route.params.login == 'true' && !getStatus()) {
     // Poslat požadavek na přihlášení pokud je přenačtena strana a nejde o odhlášení a uživatel se pokusil přihlásit a uživatel není přihlášen
     signIn();
   }
   else if(event.data.status === 'signed in') {
-    updateStatus(true);
+    await updateStatus(true, event.data.token, event.data.user_perm, event.data.nf_majetek);
     stopLoading();
   }
   else if(event.data.status === 'error') {
@@ -214,38 +245,34 @@ const handleMessage = (event: MessageEvent) => {
 }
 
 const startLoading = () => {
-  console.log("Loading started");
   isLoadingOpenRef.value = true;
   isLoadingRef.value = true;
 };
 
 const stopLoading = () => {
-  console.log('stop loading');
-  console.log(isLoadingRef.value);
-  console.log(isLoadingOpenRef.value);
-  console.log(isLoadingPausedRef.value);
   if (isLoadingRef.value) {
     isLoadingRef.value = false;
 
     if (!isLoadingPausedRef.value) {
-      console.log('hiding loading')
       isLoadingOpenRef.value = false;
-      console.log(isLoadingOpenRef.value);
     }
   }
 };
 
-const updateStatus = (value: boolean) => {
-  console.log('updateStatus');
+const updateStatus = async (value: boolean, authToken = '', userPerm = 0, nfInventory = 0) => {
   isSignedInRef.value = value;
   store.dispatch('updateIsSignedIn', value);
+  store.dispatch('updateUserPerm', userPerm);
+  store.dispatch('updateNfInventory', nfInventory);
+
+  if(value) {
+    await signInApi();
+  }
 }
 
 const updateUrl = (url: string) => {
-  console.log('updateUrl');
   reactiveUrlRef.value = url;
   store.dispatch('updateUrl', url);
-  console.log(reactiveUrlRef.value);
   
   if(izusRef.value) {
     izusRef.value.src = url;
@@ -255,7 +282,6 @@ const updateUrl = (url: string) => {
 const fetchTips = async () => {
   try {
     const response = await fetch(globals.appUrl + 'ws/vite_ze/');
-    console.log(response);
     tips = await response.json();
   }
   catch (e) {
@@ -266,11 +292,10 @@ const fetchTips = async () => {
 const getRandomTip = () => {
   try {
     const index = Math.floor(Math.random() * tips.length);
-    console.log(tips[index].nadpis);
     loadingTipRef.value = tips[index] ?? '';
   }
   catch(error) {
-    console.log('tips not loaded yet');
+    console.log('tips still loading...');
   }
 }
 
@@ -291,6 +316,11 @@ const pauseLoading = (value: boolean) => {
   }
 }
 
+const restoreConnection = async () => {
+  const status = await Network.getStatus();
+  isOnlineRef.value = status.connected;
+}
+
 </script>
 
 <style scoped>
@@ -308,6 +338,16 @@ ion-header {
   margin-right: var(--ion-safe-area-right) !important;
   margin-right: constant(safe-area-inset-right) !important; /* iOS 11.0 - 11.2 */
   margin-right: env(safe-area-inset-right) !important; /* iOS 11.3+ */
+}
+
+#offline-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  gap: 2em;
 }
 
 ion-modal {
@@ -371,6 +411,7 @@ ion-modal {
     justify-content: center;
     width: 99%;
     height: 100%;
+    border: none;
   }
 
   ion-modal {
