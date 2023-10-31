@@ -21,7 +21,7 @@ import Keypad from '@/components/Keypad.vue';
 import { useI18n } from 'vue-i18n';
 
 const { tm } = useI18n();
-const emits = defineEmits(['onAuthenticated']);
+const emits = defineEmits(['onAuthenticated', 'onAuthRequested']);
 const store = useStore();
 
 const isOpenRef = ref(false);
@@ -125,6 +125,7 @@ const openBiometry = () => {
   }
 
   isOpenRef.value = true;
+  emits('onAuthRequested')
 
   if(lockOptionRef.value == 'biometry' && !getUnlockTried()) {
     onAuthenticate();

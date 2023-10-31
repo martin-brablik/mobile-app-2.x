@@ -22,12 +22,10 @@
                     <ion-icon :icon="home" slot="start"></ion-icon>
                     <ion-label>{{ tm('main_page') }}</ion-label>
                 </ion-item>
-                <!--
-                <ion-item @click="push('/inventory')">
+                <ion-item v-if="/*isSigneInRef && userPermRef >= 5 && nfInventoryRef*/true" @click="router.push('/inventory')">
                     <ion-icon :icon="checkmark" slot="start"></ion-icon>
                     <ion-label>{{ $tm('inventory') }}</ion-label>
                 </ion-item>
-                -->
                 <ion-item @click="push('/settings')">
                     <ion-icon :icon="settings" slot="start"></ion-icon>
                     <ion-label>{{ $tm('settings') }}</ion-label>
@@ -51,7 +49,7 @@
 
 <script setup lang="ts">
 
-import {IonMenu, IonHeader, IonToolbar, IonContent, IonList, IonItem, IonLabel, IonIcon, IonButtons, IonMenuButton, IonImg, IonButton, useIonRouter, menuController } from '@ionic/vue'
+import {IonMenu, IonHeader, IonToolbar, IonContent, IonList, IonItem, IonLabel, IonIcon, IonButtons, IonMenuButton, IonImg, IonButton, useIonRouter, menuController, onIonViewDidEnter } from '@ionic/vue'
 import { logIn, logOut, home, checkmark, settings, informationCircle, close, helpCircle, refresh } from 'ionicons/icons';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -65,9 +63,17 @@ const router = useIonRouter();
 const store = useStore();
 const menuRef = ref<typeof IonMenu>();
 const isSigneInRef = ref(computed(() => store.getters.getIsSigneIn).value);
+const userPermRef = ref(computed(() => store.getters.getUserPerm).value);
+const nfInventoryRef = ref(computed(() => store.getters.getNfInventory).value);
 
 const onOpen = () => {
     isSigneInRef.value = computed(() => store.getters.getIsSignedIn).value;
+    userPermRef.value = computed(() => store.getters.getUserPerm).value;
+    nfInventoryRef.value = computed(() => store.getters.getNfInventory).value;
+
+    console.log(isSigneInRef.value);
+    console.log(userPermRef.value);
+    console.log(nfInventoryRef.value);
 }
 
 const push = (href: string) => {
