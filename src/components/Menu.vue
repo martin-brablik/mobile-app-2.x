@@ -22,7 +22,7 @@
                     <ion-icon :icon="home" slot="start"></ion-icon>
                     <ion-label>{{ tm('main_page') }}</ion-label>
                 </ion-item>
-                <ion-item v-if="/*isSigneInRef && userPermRef >= 5 && nfInventoryRef*/true" @click="router.push('/inventory')">
+                <ion-item v-if="isSigneInRef && userPermRef >= 5 && nfInventoryRef" @click="router.push('/inventory')">
                     <ion-icon :icon="checkmark" slot="start"></ion-icon>
                     <ion-label>{{ $tm('inventory') }}</ion-label>
                 </ion-item>
@@ -70,10 +70,6 @@ const onOpen = () => {
     isSigneInRef.value = computed(() => store.getters.getIsSignedIn).value;
     userPermRef.value = computed(() => store.getters.getUserPerm).value;
     nfInventoryRef.value = computed(() => store.getters.getNfInventory).value;
-
-    console.log(isSigneInRef.value);
-    console.log(userPermRef.value);
-    console.log(nfInventoryRef.value);
 }
 
 const push = (href: string) => {

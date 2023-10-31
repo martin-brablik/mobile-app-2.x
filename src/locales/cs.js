@@ -79,7 +79,7 @@ const cs = {
     "inventory_ok": "V pořádku, zainventarizováno",
     "inventory_ok_no_record": "V pořádku, ale nemá se ukládat záznam o inventarizaci",
     "camera_request": "K použití fotoaparátu je nutné oprávnění.",
-    "camera_setting": "K udělění oprávnění k používání fotoaparátu, přejděte do nastavení.",
+    "camera_settings": "K udělění oprávnění k používání fotoaparátu, přejděte do nastavení.",
     "help_redirect": "Budete přesměrováni do nápovědy iZUŠ. Přejete si pokračovat?",
     "inventory_result": "Výsledek inventarizace",
     "inventory_success": "Všechny položky byly úspěšně zainventarizovány",

@@ -84,7 +84,6 @@ const tipsLoadedRef = ref(false);
 const isOnlineRef = ref(true);
 
 onMounted(() => {
-  console.log('mounted');
   izusRef.value.addEventListener('load', () => {
     izusRef.value.contentWindow?.postMessage({ setCookie: true }, '*');
   });
@@ -114,17 +113,14 @@ onIonViewWillEnter(() => {
   tipsLoadedRef.value = false;
 
   loginAttempt = 1;
-  console.log('entered');
 
   if(reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signOut();
   }
 
-  console.log('status: ' + getStatus());
   if(route.params.login == 'true' && !getStatus()) {
-    //startLoading();
+    startLoading();
     setTimeout(() => {
-      console.log('timeout');
       stopLoading();
     }, 20000);
   }
@@ -139,13 +135,11 @@ onIonViewDidEnter(async () => {
   await returnTips();
 
   tipsLoadedRef.value = true;
-  console.log('tips loaded');
   if(didYouKnowHeadingRef.value && loadingTipRef.value.nadpis) {
     didYouKnowHeadingRef.value.innerText = tm('did_you_know');
   }
 
   if(didYouKnowContentRef.value) {
-    console.log('loadingTipRef: ' + loadingTipRef.value)
     didYouKnowContentRef.value.innerText = loadingTipRef.value ? loadingTipRef.value.nadpis : '';
   }
 
@@ -207,14 +201,12 @@ const signInApi = async () => {
 }
 
 const signOut = (error: string = 'none') => {
-  console.log('signOut');
   updateStatus(false);
   updateUrl(globals.appUrl + globals.logoutQuery);
   router.push({ name: 'login', params: { error: error } });
 };
 
 const handleMessage = async (event: MessageEvent) => {
-  console.log(event.data);
   if(event.data.status === 'loaded' && !reactiveUrlRef.value.includes(globals.logoutQuery) && route.params.login == 'true' && !getStatus()) {
     // Poslat požadavek na přihlášení pokud je přenačtena strana a nejde o odhlášení a uživatel se pokusil přihlásit a uživatel není přihlášen
     signIn();
@@ -253,30 +245,21 @@ const handleMessage = async (event: MessageEvent) => {
 }
 
 const startLoading = () => {
-  console.log("Loading started");
   isLoadingOpenRef.value = true;
   isLoadingRef.value = true;
 };
 
 const stopLoading = () => {
-  console.log('stop loading');
-  console.log(isLoadingRef.value);
-  console.log(isLoadingOpenRef.value);
-  console.log(isLoadingPausedRef.value);
   if (isLoadingRef.value) {
     isLoadingRef.value = false;
 
     if (!isLoadingPausedRef.value) {
-      console.log('hiding loading')
       isLoadingOpenRef.value = false;
-      console.log(isLoadingOpenRef.value);
     }
   }
 };
 
 const updateStatus = async (value: boolean, authToken = '', userPerm = 0, nfInventory = 0) => {
-  console.log('updateStatus');
-  console.log(value, authToken, userPerm, nfInventory);
   isSignedInRef.value = value;
   store.dispatch('updateIsSignedIn', value);
   store.dispatch('updateUserPerm', userPerm);
@@ -288,10 +271,8 @@ const updateStatus = async (value: boolean, authToken = '', userPerm = 0, nfInve
 }
 
 const updateUrl = (url: string) => {
-  console.log('updateUrl');
   reactiveUrlRef.value = url;
   store.dispatch('updateUrl', url);
-  console.log(reactiveUrlRef.value);
   
   if(izusRef.value) {
     izusRef.value.src = url;
@@ -301,7 +282,6 @@ const updateUrl = (url: string) => {
 const fetchTips = async () => {
   try {
     const response = await fetch(globals.appUrl + 'ws/vite_ze/');
-    console.log(response);
     tips = await response.json();
   }
   catch (e) {
@@ -312,11 +292,10 @@ const fetchTips = async () => {
 const getRandomTip = () => {
   try {
     const index = Math.floor(Math.random() * tips.length);
-    console.log(tips[index].nadpis);
     loadingTipRef.value = tips[index] ?? '';
   }
   catch(error) {
-    console.log('tips not loaded yet');
+    console.log('tips still loading...');
   }
 }
 

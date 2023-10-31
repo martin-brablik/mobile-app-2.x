@@ -1,8 +1,8 @@
 <template>
     <ion-page>
         <Toolbar :page-title="$tm('property_inventory').toString()" :display-menu-button="false" />
-        <audio ref="beepSuccessRef" :src="beep1"></audio>
-        <audio ref="beepFailRef" :src="beep2"></audio>
+        <audio preload="true" ref="beepSuccessRef" :src="beep1"></audio>
+        <audio preload="true" ref="beepFailRef" :src="beep2"></audio>
         <ion-content id="window">
             <ion-buttons id="controls">
                 <ion-button @click="BarcodeScanner.toggleTorch(); isTorchEnabledRef = !isTorchEnabledRef;" slot="icon-only">
@@ -62,8 +62,8 @@ const isEraseDialogOpenRef = ref(false);
 const isLeaveDialogOpenRef = ref(false);
 const isTorchEnabledRef = ref(false);
 const isScanningPausedRef = ref(false);
-const beepSuccessRef = ref();
-const beepFailRef = ref();
+const beepSuccessRef: Ref<HTMLAudioElement | undefined> = ref();
+const beepFailRef: Ref<HTMLAudioElement | undefined> = ref();
 
 const { tm } = useI18n();
 
@@ -165,6 +165,9 @@ const leaveDialogButtons = [
 ];
 
 onMounted(() => {
+    beepSuccessRef.value?.load();
+    beepFailRef.value?.load();
+
     Network.addListener('networkStatusChange', async status => {
         if(status.connected) {
             await processPendingItems();
@@ -175,7 +178,6 @@ onMounted(() => {
 onIonViewWillEnter(() => {
     BarcodeScanner.disableTorch();
     scannedCodes.value = computed(() => store.getters.getScannedCodes).value;
-    console.log(scannedCodes.value);
     initiate();
 });
 
@@ -283,7 +285,6 @@ const inventoryItem = async (code: Code, inventoryBatch = true): Promise<Code> =
         body: JSON.stringify({ "kody": [code.item], "inventarizovat-vsechny-kusy": inventoryBatch })
     }
     const res = await fetch(url, req);
-    console.log(res)
 
     if (!res.ok) {
         code.state.state = State.ERROR;
@@ -428,7 +429,6 @@ const alertHelp = () => {
 }
 
 const alertErase = () => {
-    console.log('erase');
     BarcodeScanner.showBackground();
     document.querySelector('body')?.classList.remove('scanner-active');
     alertHeaderRef.value = tm('erase_inventory');
@@ -481,7 +481,10 @@ const sleep = async (ms: number) => {
 const scanFlash = async (scanResult: boolean) => {
     const beep = scanResult ? beepSuccessRef.value : beepFailRef.value;
 
-    beep.play();
+    if(beep) {
+        beep.play();
+    }
+
     navigator.vibrate([scanResult ? 100 : 500]);
 }
 
