@@ -92,6 +92,7 @@ const en = {
     "save_inventory": "Do you wish to save the current list?",
     "erase_inventory": "Do you wish to erase the current list?",
     "no_effect": "This will not affect the scanned items",
+    "inventory_pending": "Awaiting result",
 }
 
 export default en;

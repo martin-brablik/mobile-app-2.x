@@ -92,6 +92,7 @@ const sk = {
     "save_inventory": "Prajete si uložiť aktuálny zoznam?",
     "erase_inventory": "Prajete si vymazať aktuálny zoznam?",
     "no_effect": "Táto akcia nijako neovplyvní naskenované položky",
+    "inventory_pending": "Čaká sa na výsledok",
 }
 
 export default sk;

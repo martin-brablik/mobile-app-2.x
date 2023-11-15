@@ -13,7 +13,7 @@
           </article>
         </div>
       </div>
-      <ion-modal :isOpen="isLoadingOpenRef" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
+      <ion-modal :isOpen="isLoadingOpenRef" :fullscreen="true" tappable @click="pauseLoading(!isLoadingPausedRef)">
         <div class="loading">
           <ion-img class="ion-padding" :src="iZUS_pruhl" />
           <div class="lds-dual-ring">

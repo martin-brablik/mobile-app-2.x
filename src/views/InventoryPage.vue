@@ -25,7 +25,7 @@
                         <ion-icon v-if="code.state.state == State.MULTIPLE" slot="start" color="warning" :icon="checkmarkCircle"></ion-icon>
                         <ion-icon v-if="code.state.state == State.SUCCESS" slot="start" color="success" :icon="checkmarkCircle"></ion-icon>
                         <ion-icon v-if="code.state.state == State.FAIL" slot="start" color="danger" :icon="alertCircle"></ion-icon>
-                        <ion-label>{{ code.item.nazev_majetku ? code.item.nazev_majetku : (code.state.state == State.PENDING ? 'Čeká se na spojení' : 'Neznámý majetek') }}</ion-label>
+                        <ion-label>{{ code.item.nazev_majetku ? code.item.nazev_majetku : (code.state.state == State.PENDING ? $tm('') : $tm('unknown_item')) }}</ion-label>
                     </ion-item>
                 </ion-list>
             </ion-content>
@@ -251,11 +251,11 @@ const startScan = async () => {
         return;
     }
 
+    code.state.state = State.PENDING;
     scannedCodes.value.push(code);
     await BarcodeScanner.prepare();
 
     try {
-        code.state.state = State.PENDING;
         if ((await Network.getStatus()).connected) {
             code = await inventoryItem(code);
             scannedCodes.value.pop();
@@ -265,8 +265,8 @@ const startScan = async () => {
         }
     }
     catch (e) {
-        alertHeaderRef.value = 'Chyba';
-        alertMessageRef.value = 'Položku se nepodařilo zpracovat';
+        alertHeaderRef.value = tm('error');
+        alertMessageRef.value = tm('error_processing_item');
         isAlertOpenRef.value = true;
     }
 

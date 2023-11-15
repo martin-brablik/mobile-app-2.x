@@ -92,6 +92,8 @@ const cs = {
     "save_inventory": "Přejete si uložit aktuální seznam?",
     "erase_inventory": "Přejete si vymazat aktuální seznam?",
     "no_effect": "Tato akce nijak neovlivní naskenované položky",
+    "inventory_pending": "Čeká se na výsledek",
+    
 }
 
 export default cs;
