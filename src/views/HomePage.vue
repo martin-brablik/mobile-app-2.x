@@ -83,13 +83,14 @@ const ringRef : Ref<HTMLElement | undefined> = ref();
 const tipsLoadedRef = ref(false);
 const isOnlineRef = ref(true);
 
-onMounted(() => {
+onMounted(async () => {
+  authFailedRef.value = false;
   izusRef.value.addEventListener('load', () => {
     izusRef.value.contentWindow?.postMessage({ setCookie: true }, '*');
   });
 
   if (autoLoginRef.value && route.params.login == 'true') {
-    signIn();
+    await signIn();
   }
 
   window.addEventListener('message', handleMessage);
@@ -104,7 +105,6 @@ onMounted(() => {
 });
 
 onIonViewWillEnter(() => {
-  authFailedRef.value = false;
   reactiveUrlRef.value = computed(() => store.getters.getUrl).value;
   isSignedInRef. value = computed(() => store.getters.getIsSignedIn).value;
   usernameRef.value = computed(() => store.getters.getUsername).value;
@@ -113,6 +113,13 @@ onIonViewWillEnter(() => {
   tipsLoadedRef.value = false;
 
   loginAttempt = 1;
+
+  if(computed(() => store.getters.getLanguage).value === 'sk') {
+    const url = new URL(reactiveUrlRef.value);
+
+    url.searchParams.set('lang', 'sk');
+    reactiveUrlRef.value = url.toString();
+  }
 
   if(reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signOut();
@@ -132,6 +139,11 @@ const returnTips = async () => {
 }
 
 onIonViewDidEnter(async () => {
+  if(authFailedRef.value) {
+    authFailedRef.value = false;
+    await signIn();
+  }
+
   await returnTips();
 
   tipsLoadedRef.value = true;
@@ -172,8 +184,8 @@ const getStatus = () => {
   return isSignedInRef.value;
 }
 
-const signIn = () => {
-  if(izusRef.value && izusRef.value.contentWindow && !authFailedRef.value) {
+const signIn = async () => {
+  if(izusRef.value && izusRef.value.contentWindow) {
     izusRef.value.contentWindow?.postMessage({ login: getSignInPost() }, '*');
   }
 };
@@ -203,15 +215,26 @@ const signInApi = async () => {
 const signOut = (error: string = 'none') => {
   updateStatus(false);
   updateUrl(globals.appUrl + globals.logoutQuery);
+  fetch(globals.appUrl + 'ws/api/logout', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + computed(() => store.getters.getAuthToken).value,
+    }
+  }).then(console.log).catch(console.error);
   router.push({ name: 'login', params: { error: error } });
 };
 
 const handleMessage = async (event: MessageEvent) => {
   if(event.data.status === 'loaded' && !reactiveUrlRef.value.includes(globals.logoutQuery) && route.params.login == 'true' && !getStatus()) {
     // Poslat požadavek na přihlášení pokud je přenačtena strana a nejde o odhlášení a uživatel se pokusil přihlásit a uživatel není přihlášen
-    signIn();
+    await signIn();
   }
   else if(event.data.status === 'signed in') {
+    if(!getStatus()) {
+      await signInApi();
+    }
+
     await updateStatus(true, event.data.token, event.data.user_perm, event.data.nf_majetek);
     stopLoading();
   }
@@ -264,10 +287,6 @@ const updateStatus = async (value: boolean, authToken = '', userPerm = 0, nfInve
   store.dispatch('updateIsSignedIn', value);
   store.dispatch('updateUserPerm', userPerm);
   store.dispatch('updateNfInventory', nfInventory);
-
-  if(value) {
-    await signInApi();
-  }
 }
 
 const updateUrl = (url: string) => {

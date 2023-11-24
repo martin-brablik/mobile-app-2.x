@@ -7,15 +7,6 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'http',
     url: 'https://m.izus.cz/'
-  },
-  plugins: {
-    SplashScreen: {
-      launchAutoHide: false,
-      androidScaleType: 'CENTER_CROP',
-      splashFullScreen: true,
-      splashImmersive: false,
-      backgroundColor: '#FFFFFF',
-    }
   }
 };
 

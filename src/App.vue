@@ -31,7 +31,6 @@ export default defineComponent({
     const biometricsRef = ref<typeof Biometrics | null>(null);  
 
     onMounted(() => {
-      console.log(globals.appUrl);
 
       ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
 
