@@ -25,7 +25,7 @@
                         <ion-icon v-if="code.state.state == State.MULTIPLE" slot="start" color="warning" :icon="checkmarkCircle"></ion-icon>
                         <ion-icon v-if="code.state.state == State.SUCCESS" slot="start" color="success" :icon="checkmarkCircle"></ion-icon>
                         <ion-icon v-if="code.state.state == State.FAIL" slot="start" color="danger" :icon="alertCircle"></ion-icon>
-                        <ion-label>{{ code.item.nazev_majetku ? code.item.nazev_majetku : (code.state.state == State.PENDING ? $tm('') : $tm('unknown_item')) }}</ion-label>
+                        <ion-label>{{ code.item.nazev_majetku ? code.item.nazev_majetku : (code.state.state == State.PENDING ? $tm('inventory_pending') : $tm('unknown_item')) }}</ion-label>
                     </ion-item>
                 </ion-list>
             </ion-content>
@@ -52,6 +52,8 @@ import { useI18n } from 'vue-i18n';
 import beep1 from '@/assets/audio/beep1.mp3';
 import beep2 from '@/assets/audio/beep2.mp3';
 
+const usernameRef = ref(computed(() => store.getters.getUsername).value);
+const passwordRef = ref(computed(() => store.getters.getPassword).value);
 const scannedCodes: Ref<Code[]> = ref(new Array<Code>());
 const alertHeaderRef = ref('');
 const alertSubheaderRef = ref('');
@@ -175,7 +177,8 @@ onMounted(() => {
     });
 });
 
-onIonViewWillEnter(() => {
+onIonViewWillEnter(async () => {
+    await signInApi();
     BarcodeScanner.disableTorch();
     scannedCodes.value = computed(() => store.getters.getScannedCodes).value;
     initiate();
@@ -195,6 +198,27 @@ const initiate = async () => {
     }
 };
 
+const signInApi = async () => {	
+  const url = globals.appUrl + 'ws/api/login/';
+  const timestamp = new Date().getTime();
+  const passwordHmac = globals.hmac(usernameRef.value, passwordRef.value, timestamp.toString());
+  const data = {
+    username: usernameRef.value,
+    password: passwordHmac,
+    salt: timestamp
+  };
+  const req: RequestInit = {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    }
+  } 
+  const res = await fetch(url, req);
+  const apiKey = await res.json();
+
+  store.dispatch('updateAuthToken', apiKey.access_token);
+}
 
 const prepare = async () => {
     await BarcodeScanner.prepare();

@@ -10,11 +10,11 @@
         </ion-header>
         <ion-content>
             <ion-list>
-                <ion-item v-if="!isSigneInRef" @click="signIn()">
+                <ion-item v-if="!isSignedInRef" @click="signIn()">
                     <ion-icon :icon="logIn" slot="start"></ion-icon>
                     <ion-label>{{ tm('sign_in') }}</ion-label>
                 </ion-item>
-                <ion-item v-if="isSigneInRef" @click="signOut()">
+                <ion-item v-if="isSignedInRef" @click="signOut()">
                     <ion-icon :icon="logOut" slot="start"></ion-icon>
                     <ion-label>{{ tm('sign_out') }}</ion-label>
                 </ion-item>
@@ -22,7 +22,7 @@
                     <ion-icon :icon="home" slot="start"></ion-icon>
                     <ion-label>{{ tm('main_page') }}</ion-label>
                 </ion-item>
-                <ion-item v-if="isSigneInRef && userPermRef >= 5 && nfInventoryRef" @click="router.push('/inventory')">
+                <ion-item v-if="isSignedInRef && userPermRef >= 5 && nfInventoryRef" @click="router.push('/inventory')">
                     <ion-icon :icon="checkmark" slot="start"></ion-icon>
                     <ion-label>{{ $tm('inventory') }}</ion-label>
                 </ion-item>
@@ -62,12 +62,12 @@ const { tm } = useI18n();
 const router = useIonRouter();
 const store = useStore();
 const menuRef = ref<typeof IonMenu>();
-const isSigneInRef = ref(computed(() => store.getters.getIsSigneIn).value);
+const isSignedInRef = ref(computed(() => store.getters.getIsSignedIn).value);
 const userPermRef = ref(computed(() => store.getters.getUserPerm).value);
 const nfInventoryRef = ref(computed(() => store.getters.getNfInventory).value);
 
 const onOpen = () => {
-    isSigneInRef.value = computed(() => store.getters.getIsSignedIn).value;
+    isSignedInRef.value = computed(() => store.getters.getIsSignedIn).value;
     userPermRef.value = computed(() => store.getters.getUserPerm).value;
     nfInventoryRef.value = computed(() => store.getters.getNfInventory).value;
 }

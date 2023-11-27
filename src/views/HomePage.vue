@@ -39,8 +39,7 @@
 
 import { IonContent, IonPage, IonHeader, IonModal, IonImg, IonSkeletonText, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { caretDown, refresh } from 'ionicons/icons';
-import { Ref, ref, onMounted, computed, onUnmounted } from 'vue';
-import { SHA1, MD5, enc } from 'crypto-js';
+import { Ref, ref, onMounted, computed } from 'vue';
 import { App } from '@capacitor/app';
 import store from '@/store';
 import { useRoute } from 'vue-router';
@@ -167,15 +166,13 @@ onIonViewWillLeave(() => {
   stopLoading();
 });
 
-const hashPassword = (username: string, password: string, salt: string) => SHA1(MD5(enc.Latin1.parse(password + username)).toString().toLocaleLowerCase('sk-SK') + salt).toString().toLocaleLowerCase('sk-SK');
-
 const getSignInPost = () => {
   const validateCredential = (credential: string | undefined | null) => credential && credential.length != 0 && credential !== '' ? credential : null;
   const username = validateCredential(usernameRef.value) ?? 'neexistujici_uzivatel';
   const password = validateCredential(passwordRef.value) ?? 'neexistujici_heslo';
   const sugar = Math.floor(Math.random() * 900000) + 100000;
-  const password_hmac = hashPassword(username, password, sugar.toString());
-  const postData = { sugar: sugar, password_hmac: password_hmac, username: username, prepassword: 'Heslo' };
+  const passwordHmac = globals.hmac(username, password, sugar.toString());
+  const postData = { sugar: sugar, password_hmac: passwordHmac, username: username, prepassword: 'Heslo' };
 
   return postData;
 };
@@ -189,28 +186,6 @@ const signIn = async () => {
     izusRef.value.contentWindow?.postMessage({ login: getSignInPost() }, '*');
   }
 };
-
-const signInApi = async () => {	
-  const url = globals.appUrl + 'ws/api/login/';
-  const timestamp = new Date().getTime();
-  const password_hmac = hashPassword(usernameRef.value, passwordRef.value, timestamp.toString());
-  const data = {
-    username: usernameRef.value,
-    password: password_hmac,
-    salt: timestamp
-  };
-  const req: RequestInit = {
-    method: 'POST',
-    body: JSON.stringify(data),
-    headers: {
-      "Content-Type": "application/json",
-    }
-  } 
-  const res = await fetch(url, req);
-  const apiKey = await res.json();
-
-  store.dispatch('updateAuthToken', apiKey.access_token);
-}
 
 const signOut = (error: string = 'none') => {
   updateStatus(false);
@@ -231,10 +206,6 @@ const handleMessage = async (event: MessageEvent) => {
     await signIn();
   }
   else if(event.data.status === 'signed in') {
-    if(!getStatus()) {
-      await signInApi();
-    }
-
     await updateStatus(true, event.data.token, event.data.user_perm, event.data.nf_majetek);
     stopLoading();
   }

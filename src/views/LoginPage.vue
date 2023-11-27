@@ -3,7 +3,7 @@
     <ion-content :fullscreen="true" :scroll-y="false">
       <div class="viewport" :style="{backgroundImage: 'url(' + bg_login +')'}">
         <div class="container">
-          <ion-img :src="iZUS_pruhl" alt="logo" />
+          <ion-img :src="logoRef" alt="logo" />
           <p v-if="route.params.error && route.params.error !== 'none'" class="error">{{ $tm(route.params.error.toString()) }}</p>
           <form action="" @submit.prevent="signIn">
             <span style="display: flex; align-items: center;"><h2>{{ $tm('login_title') }}</h2><ion-button fill="clear" slot="icon-only" color="secondary" shape="round" size="small" @click="redirect('o_izus/napoveda/?returnUri=%2Findex.php#clanek_napovedy441-1/');"><ion-icon :icon="helpCircle"></ion-icon></ion-button></span>
@@ -12,7 +12,7 @@
               <ion-input style="width: 80%;" v-model="passwordRef" :label="$tm('password').toString()" label-placement="floating" :type="showPasswordRef ? 'text' : 'password'" fill="solid" color="secondary" @keyup.enter="signIn" />
               <ion-checkbox class="eye" v-model="showPasswordRef" color="secondary" justify="space-between"></ion-checkbox>
             </div>
-            <ion-checkbox v-model="remeberCredentialsRef" color="secondary" justify="space-between">{{ $tm('remember') }}</ion-checkbox>
+            <ion-checkbox v-model="rememberCredentialsRef" color="secondary" justify="space-between">{{ $tm('remember') }}</ion-checkbox>
             <ion-button expand="block" color="secondary" type="submit"><ion-icon slot="start" :icon="key"></ion-icon>{{ $tm('sign_in') }}</ion-button>
             <ion-button type="button" class="btn-clear lowercaseBtn" fill="clear" @click="redirect('');">{{ $tm('continue_without_login') }}</ion-button>
             <ion-button type="button" class="btn-clear lowercaseBtn" fill="clear" @click="redirect('nastaveni_uctu/nove_heslo/');">{{ $tm('forgot_password') }}</ion-button>
@@ -31,6 +31,7 @@ import { key, informationCircle, helpCircle } from 'ionicons/icons';
 import { useStore } from 'vuex';
 import bg_login from '@/assets/images/bg_login.png';
 import iZUS_pruhl from '@/assets/images/iZUS_pruhl.png';
+import izus_inverzni_podoba from '@/assets/images/izus_inverzni_podoba.png';
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -44,13 +45,14 @@ const tm = useI18n();
 
 const usernameRef = ref(computed(() => store.getters.getUsername).value);
 const passwordRef = ref(computed(() => store.getters.getPassword).value);
-const remeberCredentialsRef = ref(computed(() => store.getters.getUsername).value);
+const rememberCredentialsRef = ref(computed(() => store.getters.getUsername).value);
 const showPasswordRef = ref(false);
+const logoRef = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? izus_inverzni_podoba : iZUS_pruhl);
 
 onIonViewWillEnter(() => {
   usernameRef.value = computed(() => store.getters.getUsername).value;
   passwordRef.value = computed(() => store.getters.getPassword).value;
-  remeberCredentialsRef.value = computed(() => store.getters.getUsername).value ? true : false;
+  rememberCredentialsRef.value = computed(() => store.getters.getUsername).value ? true : false;
   store.dispatch('updateIsSignedIn', false);
 });
 
@@ -66,7 +68,7 @@ const signIn = async (e: Event) => {
   store.dispatch('updatePassword', passwordRef.value.trim());
   store.dispatch('updateUrl', globals.appUrl);
 
-  if(remeberCredentialsRef.value) {
+  if(rememberCredentialsRef.value) {
     if(usernameRef.value) {
       localStorage.setItem('username', usernameRef.value);
     }
