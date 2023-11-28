@@ -5,10 +5,10 @@
         <audio preload="true" ref="beepFailRef" :src="beep2"></audio>
         <ion-content id="window">
             <ion-buttons id="controls">
-                <ion-button @click="BarcodeScanner.toggleTorch(); isTorchEnabledRef = !isTorchEnabledRef;" slot="icon-only">
+                <ion-button class="icon-transparent-background" @click="BarcodeScanner.toggleTorch(); isTorchEnabledRef = !isTorchEnabledRef;" slot="icon-only">
                     <ion-icon :icon="isTorchEnabledRef ? flash : flashOutline" size="large"></ion-icon>
                 </ion-button>
-                <ion-button @click="alertHelp" slot="icon-only">
+                <ion-button class="icon-transparent-background" @click="alertHelp" slot="icon-only">
                     <ion-icon :icon="helpCircle" size="large"></ion-icon>
                 </ion-button>
             </ion-buttons>
@@ -281,9 +281,8 @@ const startScan = async () => {
 
     try {
         if ((await Network.getStatus()).connected) {
-            code = await inventoryItem(code);
             scannedCodes.value.pop();
-            scannedCodes.value.push(code);
+            code = await inventoryItem(code);
             scanFlash(code.state.state == State.SUCCESS);
             store.dispatch('updateScannedCodes', scannedCodes.value);
         }
@@ -292,6 +291,9 @@ const startScan = async () => {
         alertHeaderRef.value = tm('error');
         alertMessageRef.value = tm('error_processing_item');
         isAlertOpenRef.value = true;
+    }
+    finally {
+        scannedCodes.value.push(code);
     }
 
     return lastScannedCode;
@@ -312,9 +314,9 @@ const inventoryItem = async (code: Code, inventoryBatch = true): Promise<Code> =
 
     if (!res.ok) {
         code.state.state = State.ERROR;
-        alertHeaderRef.value = tm('error');
-        alertMessageRef.value = tm('error_processing_item');
-        isAlertOpenRef.value = true;
+        console.log(res.statusText);
+        console.log(res.status);
+        console.log(res.body);
         throw res.status;
     }
 
@@ -547,6 +549,10 @@ ion-buttons {
 #list {
     min-height: 0;
     flex: 1 1 auto;
+}
+
+.icon-transparent-background {
+    color: white;
 }
 
 </style>

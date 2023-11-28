@@ -3,9 +3,9 @@
     <ion-header></ion-header>
     <ion-content id="main-content" :scroll-events="true" safe-area>
       <div style="height: 100%; width: 100%;">
-        <iframe v-if="isOnlineRef" class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
-        <div id="offline-page" class="ion-padding" :style="{ display: isOnlineRef ? 'none' : 'flex'}">
-          <img :src="iZUS_pruhl" alt="" >
+        <iframe v-if="isOnlineRef" class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef" allow="geolocation 'self' https://www.izus.cz; storage-access *">izus</iframe>
+        <div v-if="!isOnlineRef" id="offline-page" class="ion-padding">
+          <img :src="logoRef" alt="" >
           <ion-button shape="round" @click="restoreConnection()"><ion-icon slot="icon-only" :icon="refresh"></ion-icon></ion-button>
           <article id="offline-text">
             <img :src="wifi_off" alt="" width="32" height="32">
@@ -15,7 +15,7 @@
       </div>
       <ion-modal :isOpen="isLoadingOpenRef" :fullscreen="true" tappable @click="pauseLoading(!isLoadingPausedRef)">
         <div class="loading">
-          <ion-img class="ion-padding" :src="iZUS_pruhl" />
+          <ion-img class="ion-padding" :src="logoRef" />
           <div class="lds-dual-ring">
             <div ref="ringRef" class="lds-dual-ring-symbol"></div>
           </div>
@@ -42,9 +42,11 @@ import { caretDown, refresh } from 'ionicons/icons';
 import { Ref, ref, onMounted, computed } from 'vue';
 import { App } from '@capacitor/app';
 import store from '@/store';
+import { ScreenOrientation } from '@awesome-cordova-plugins/screen-orientation';
 import { useRoute } from 'vue-router';
 import { globals } from '@/globals';
 import iZUS_pruhl from '@/assets/images/iZUS_pruhl.png';
+import izus_inverzni_podoba from '@/assets/images/izus_inverzni_podoba.png';
 import wifi_off from '@/assets/images/wifi_off.svg';
 import { useI18n } from 'vue-i18n';
 import { Network } from '@capacitor/network'
@@ -81,6 +83,7 @@ const isLoadingPausedRef = ref(false);
 const ringRef : Ref<HTMLElement | undefined> = ref();
 const tipsLoadedRef = ref(false);
 const isOnlineRef = ref(true);
+const logoRef = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? izus_inverzni_podoba : iZUS_pruhl);
 
 onMounted(async () => {
   authFailedRef.value = false;
@@ -104,6 +107,8 @@ onMounted(async () => {
 });
 
 onIonViewWillEnter(() => {
+  ScreenOrientation.unlock();
+
   reactiveUrlRef.value = computed(() => store.getters.getUrl).value;
   isSignedInRef. value = computed(() => store.getters.getIsSignedIn).value;
   usernameRef.value = computed(() => store.getters.getUsername).value;
@@ -160,6 +165,7 @@ onIonViewDidEnter(async () => {
 });
 
 onIonViewWillLeave(() => {
+  ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
   store.dispatch('updateUrl', reactiveUrlRef.value);
   store.dispatch('updateIsSignedIn', isSignedInRef.value);
   izusRef.value.src = izusRef.value.src;
