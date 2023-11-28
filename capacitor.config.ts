@@ -7,8 +7,8 @@ const config: CapacitorConfig = {
   appendUserAgent: '; iZUS-mobile-app/2.1.1',
   server: {
     androidScheme: 'http',
-    url: 'https://izustest.8u.cz/'
-  }
+    url: 'https://m.izus.cz/'
+  },
 };
 
 export default config;
