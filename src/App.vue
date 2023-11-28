@@ -16,8 +16,6 @@ import Biometrics from '@/components/Biometrics.vue';
 import Menu from '@/components/Menu.vue';
 import { ScreenOrientation } from '@awesome-cordova-plugins/screen-orientation';
 import router from './router';
-import { globals } from './globals';
-import store from './store';
 
 export default defineComponent({
   name: 'App',
@@ -31,7 +29,6 @@ export default defineComponent({
     const biometricsRef = ref<typeof Biometrics | null>(null);  
 
     onMounted(() => {
-      console.log(globals.appUrl);
 
       ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
 

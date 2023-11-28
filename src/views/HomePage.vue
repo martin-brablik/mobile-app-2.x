@@ -3,9 +3,9 @@
     <ion-header></ion-header>
     <ion-content id="main-content" :scroll-events="true" safe-area>
       <div style="height: 100%; width: 100%;">
-        <iframe v-if="isOnlineRef" class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef">izus</iframe>
-        <div id="offline-page" class="ion-padding" :style="{ display: isOnlineRef ? 'none' : 'flex'}">
-          <img :src="iZUS_pruhl" alt="" >
+        <iframe v-if="isOnlineRef" class="izus" id="izus" ref="izusRef" :src="reactiveUrlRef" allow="geolocation 'self' https://www.izus.cz; storage-access *">izus</iframe>
+        <div v-if="!isOnlineRef" id="offline-page" class="ion-padding">
+          <img :src="logoRef" alt="" >
           <ion-button shape="round" @click="restoreConnection()"><ion-icon slot="icon-only" :icon="refresh"></ion-icon></ion-button>
           <article id="offline-text">
             <img :src="wifi_off" alt="" width="32" height="32">
@@ -13,9 +13,9 @@
           </article>
         </div>
       </div>
-      <ion-modal :isOpen="isLoadingOpenRef" :fullscreen="true" @willPresent="getRandomTip();" tappable @click="pauseLoading(!isLoadingPausedRef)">
+      <ion-modal :isOpen="isLoadingOpenRef" :fullscreen="true" tappable @click="pauseLoading(!isLoadingPausedRef)">
         <div class="loading">
-          <ion-img class="ion-padding" :src="iZUS_pruhl" />
+          <ion-img class="ion-padding" :src="logoRef" />
           <div class="lds-dual-ring">
             <div ref="ringRef" class="lds-dual-ring-symbol"></div>
           </div>
@@ -39,13 +39,14 @@
 
 import { IonContent, IonPage, IonHeader, IonModal, IonImg, IonSkeletonText, onIonViewWillEnter, useIonRouter, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { caretDown, refresh } from 'ionicons/icons';
-import { Ref, ref, onMounted, computed, onUnmounted } from 'vue';
-import { SHA1, MD5, enc } from 'crypto-js';
+import { Ref, ref, onMounted, computed } from 'vue';
 import { App } from '@capacitor/app';
 import store from '@/store';
+import { ScreenOrientation } from '@awesome-cordova-plugins/screen-orientation';
 import { useRoute } from 'vue-router';
 import { globals } from '@/globals';
 import iZUS_pruhl from '@/assets/images/iZUS_pruhl.png';
+import izus_inverzni_podoba from '@/assets/images/izus_inverzni_podoba.png';
 import wifi_off from '@/assets/images/wifi_off.svg';
 import { useI18n } from 'vue-i18n';
 import { Network } from '@capacitor/network'
@@ -82,14 +83,16 @@ const isLoadingPausedRef = ref(false);
 const ringRef : Ref<HTMLElement | undefined> = ref();
 const tipsLoadedRef = ref(false);
 const isOnlineRef = ref(true);
+const logoRef = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? izus_inverzni_podoba : iZUS_pruhl);
 
-onMounted(() => {
+onMounted(async () => {
+  authFailedRef.value = false;
   izusRef.value.addEventListener('load', () => {
     izusRef.value.contentWindow?.postMessage({ setCookie: true }, '*');
   });
 
   if (autoLoginRef.value && route.params.login == 'true') {
-    signIn();
+    await signIn();
   }
 
   window.addEventListener('message', handleMessage);
@@ -104,7 +107,8 @@ onMounted(() => {
 });
 
 onIonViewWillEnter(() => {
-  authFailedRef.value = false;
+  ScreenOrientation.unlock();
+
   reactiveUrlRef.value = computed(() => store.getters.getUrl).value;
   isSignedInRef. value = computed(() => store.getters.getIsSignedIn).value;
   usernameRef.value = computed(() => store.getters.getUsername).value;
@@ -113,6 +117,13 @@ onIonViewWillEnter(() => {
   tipsLoadedRef.value = false;
 
   loginAttempt = 1;
+
+  if(computed(() => store.getters.getLanguage).value === 'sk') {
+    const url = new URL(reactiveUrlRef.value);
+
+    url.searchParams.set('lang', 'sk');
+    reactiveUrlRef.value = url.toString();
+  }
 
   if(reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signOut();
@@ -132,6 +143,11 @@ const returnTips = async () => {
 }
 
 onIonViewDidEnter(async () => {
+  if(authFailedRef.value) {
+    authFailedRef.value = false;
+    await signIn();
+  }
+
   await returnTips();
 
   tipsLoadedRef.value = true;
@@ -149,21 +165,20 @@ onIonViewDidEnter(async () => {
 });
 
 onIonViewWillLeave(() => {
+  ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
   store.dispatch('updateUrl', reactiveUrlRef.value);
   store.dispatch('updateIsSignedIn', isSignedInRef.value);
   izusRef.value.src = izusRef.value.src;
   stopLoading();
 });
 
-const hashPassword = (username: string, password: string, salt: string) => SHA1(MD5(enc.Latin1.parse(password + username)).toString().toLocaleLowerCase('sk-SK') + salt).toString().toLocaleLowerCase('sk-SK');
-
 const getSignInPost = () => {
   const validateCredential = (credential: string | undefined | null) => credential && credential.length != 0 && credential !== '' ? credential : null;
   const username = validateCredential(usernameRef.value) ?? 'neexistujici_uzivatel';
   const password = validateCredential(passwordRef.value) ?? 'neexistujici_heslo';
   const sugar = Math.floor(Math.random() * 900000) + 100000;
-  const password_hmac = hashPassword(username, password, sugar.toString());
-  const postData = { sugar: sugar, password_hmac: password_hmac, username: username, prepassword: 'Heslo' };
+  const passwordHmac = globals.hmac(username, password, sugar.toString());
+  const postData = { sugar: sugar, password_hmac: passwordHmac, username: username, prepassword: 'Heslo' };
 
   return postData;
 };
@@ -172,44 +187,29 @@ const getStatus = () => {
   return isSignedInRef.value;
 }
 
-const signIn = () => {
-  if(izusRef.value && izusRef.value.contentWindow && !authFailedRef.value) {
+const signIn = async () => {
+  if(izusRef.value && izusRef.value.contentWindow) {
     izusRef.value.contentWindow?.postMessage({ login: getSignInPost() }, '*');
   }
 };
 
-const signInApi = async () => {	
-  const url = globals.appUrl + 'ws/api/login/';
-  const timestamp = new Date().getTime();
-  const password_hmac = hashPassword(usernameRef.value, passwordRef.value, timestamp.toString());
-  const data = {
-    username: usernameRef.value,
-    password: password_hmac,
-    salt: timestamp
-  };
-  const req: RequestInit = {
-    method: 'POST',
-    body: JSON.stringify(data),
-    headers: {
-      "Content-Type": "application/json",
-    }
-  } 
-  const res = await fetch(url, req);
-  const apiKey = await res.json();
-
-  store.dispatch('updateAuthToken', apiKey.access_token);
-}
-
 const signOut = (error: string = 'none') => {
   updateStatus(false);
   updateUrl(globals.appUrl + globals.logoutQuery);
+  fetch(globals.appUrl + 'ws/api/logout', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + computed(() => store.getters.getAuthToken).value,
+    }
+  }).then(console.log).catch(console.error);
   router.push({ name: 'login', params: { error: error } });
 };
 
 const handleMessage = async (event: MessageEvent) => {
   if(event.data.status === 'loaded' && !reactiveUrlRef.value.includes(globals.logoutQuery) && route.params.login == 'true' && !getStatus()) {
     // Poslat požadavek na přihlášení pokud je přenačtena strana a nejde o odhlášení a uživatel se pokusil přihlásit a uživatel není přihlášen
-    signIn();
+    await signIn();
   }
   else if(event.data.status === 'signed in') {
     await updateStatus(true, event.data.token, event.data.user_perm, event.data.nf_majetek);
@@ -264,10 +264,6 @@ const updateStatus = async (value: boolean, authToken = '', userPerm = 0, nfInve
   store.dispatch('updateIsSignedIn', value);
   store.dispatch('updateUserPerm', userPerm);
   store.dispatch('updateNfInventory', nfInventory);
-
-  if(value) {
-    await signInApi();
-  }
 }
 
 const updateUrl = (url: string) => {

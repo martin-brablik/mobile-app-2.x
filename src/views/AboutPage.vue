@@ -25,7 +25,7 @@
                 </ion-row>
                 <ion-row class="ion-justify-content-center">
                     <a href="https://www.sensio.cz">
-                        <ion-img :src="logo_sensio_barevne_v_pruhledne" alt="sensio" />
+                        <ion-img :src="logoRef" alt="sensio" />
                     </a>
                 </ion-row>
             </ion-grid>
@@ -40,6 +40,10 @@ import Toolbar from '@/components/Toolbar.vue';
 import googple_play_download from '@/assets/images/googple_play_download.png';
 import app_store_download from '@/assets/images/app_store_download.png';
 import logo_sensio_barevne_v_pruhledne from '@/assets/images/logo_sensio_barevne_v_pruhledne.png';
+import SENSIO_logo_vertikalni_inverzni from '@/assets/images/SENSIO logo vertikalni inverzni.png'
+import { ref } from 'vue';
+
+const logoRef = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? SENSIO_logo_vertikalni_inverzni : logo_sensio_barevne_v_pruhledne);
 
 </script>
 

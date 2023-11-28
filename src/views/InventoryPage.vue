@@ -5,10 +5,10 @@
         <audio preload="true" ref="beepFailRef" :src="beep2"></audio>
         <ion-content id="window">
             <ion-buttons id="controls">
-                <ion-button @click="BarcodeScanner.toggleTorch(); isTorchEnabledRef = !isTorchEnabledRef;" slot="icon-only">
+                <ion-button class="icon-transparent-background" @click="BarcodeScanner.toggleTorch(); isTorchEnabledRef = !isTorchEnabledRef;" slot="icon-only">
                     <ion-icon :icon="isTorchEnabledRef ? flash : flashOutline" size="large"></ion-icon>
                 </ion-button>
-                <ion-button @click="alertHelp" slot="icon-only">
+                <ion-button class="icon-transparent-background" @click="alertHelp" slot="icon-only">
                     <ion-icon :icon="helpCircle" size="large"></ion-icon>
                 </ion-button>
             </ion-buttons>
@@ -25,7 +25,7 @@
                         <ion-icon v-if="code.state.state == State.MULTIPLE" slot="start" color="warning" :icon="checkmarkCircle"></ion-icon>
                         <ion-icon v-if="code.state.state == State.SUCCESS" slot="start" color="success" :icon="checkmarkCircle"></ion-icon>
                         <ion-icon v-if="code.state.state == State.FAIL" slot="start" color="danger" :icon="alertCircle"></ion-icon>
-                        <ion-label>{{ code.item.nazev_majetku ? code.item.nazev_majetku : (code.state.state == State.PENDING ? 'Čeká se na spojení' : 'Neznámý majetek') }}</ion-label>
+                        <ion-label>{{ code.item.nazev_majetku ? code.item.nazev_majetku : (code.state.state == State.PENDING ? $tm('inventory_pending') : $tm('unknown_item')) }}</ion-label>
                     </ion-item>
                 </ion-list>
             </ion-content>
@@ -52,6 +52,8 @@ import { useI18n } from 'vue-i18n';
 import beep1 from '@/assets/audio/beep1.mp3';
 import beep2 from '@/assets/audio/beep2.mp3';
 
+const usernameRef = ref(computed(() => store.getters.getUsername).value);
+const passwordRef = ref(computed(() => store.getters.getPassword).value);
 const scannedCodes: Ref<Code[]> = ref(new Array<Code>());
 const alertHeaderRef = ref('');
 const alertSubheaderRef = ref('');
@@ -175,7 +177,8 @@ onMounted(() => {
     });
 });
 
-onIonViewWillEnter(() => {
+onIonViewWillEnter(async () => {
+    await signInApi();
     BarcodeScanner.disableTorch();
     scannedCodes.value = computed(() => store.getters.getScannedCodes).value;
     initiate();
@@ -195,6 +198,27 @@ const initiate = async () => {
     }
 };
 
+const signInApi = async () => {	
+  const url = globals.appUrl + 'ws/api/login/';
+  const timestamp = new Date().getTime();
+  const passwordHmac = globals.hmac(usernameRef.value, passwordRef.value, timestamp.toString());
+  const data = {
+    username: usernameRef.value,
+    password: passwordHmac,
+    salt: timestamp
+  };
+  const req: RequestInit = {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    }
+  } 
+  const res = await fetch(url, req);
+  const apiKey = await res.json();
+
+  store.dispatch('updateAuthToken', apiKey.access_token);
+}
 
 const prepare = async () => {
     await BarcodeScanner.prepare();
@@ -251,23 +275,25 @@ const startScan = async () => {
         return;
     }
 
+    code.state.state = State.PENDING;
     scannedCodes.value.push(code);
     await BarcodeScanner.prepare();
 
     try {
-        code.state.state = State.PENDING;
         if ((await Network.getStatus()).connected) {
-            code = await inventoryItem(code);
             scannedCodes.value.pop();
-            scannedCodes.value.push(code);
+            code = await inventoryItem(code);
             scanFlash(code.state.state == State.SUCCESS);
             store.dispatch('updateScannedCodes', scannedCodes.value);
         }
     }
     catch (e) {
-        alertHeaderRef.value = 'Chyba';
-        alertMessageRef.value = 'Položku se nepodařilo zpracovat';
+        alertHeaderRef.value = tm('error');
+        alertMessageRef.value = tm('error_processing_item');
         isAlertOpenRef.value = true;
+    }
+    finally {
+        scannedCodes.value.push(code);
     }
 
     return lastScannedCode;
@@ -288,9 +314,9 @@ const inventoryItem = async (code: Code, inventoryBatch = true): Promise<Code> =
 
     if (!res.ok) {
         code.state.state = State.ERROR;
-        alertHeaderRef.value = tm('error');
-        alertMessageRef.value = tm('error_processing_item');
-        isAlertOpenRef.value = true;
+        console.log(res.statusText);
+        console.log(res.status);
+        console.log(res.body);
         throw res.status;
     }
 
@@ -523,6 +549,10 @@ ion-buttons {
 #list {
     min-height: 0;
     flex: 1 1 auto;
+}
+
+.icon-transparent-background {
+    color: white;
 }
 
 </style>

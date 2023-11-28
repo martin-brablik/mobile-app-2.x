@@ -92,6 +92,7 @@ const ua = {
     "save_inventory": "Ви хочете зберегти поточний інвентар?",
     "erase_inventory": "Ви бажаєте стерти поточний інвентар?",
     "no_effect": "Ця дія не впливає на відскановані елементи",
+    "inventory_pending": "Очікування результату",
 }
 
 export default ua;
