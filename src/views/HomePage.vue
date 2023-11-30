@@ -86,6 +86,15 @@ const isOnlineRef = ref(true);
 const logoRef = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? izus_inverzni_podoba : iZUS_pruhl);
 
 onMounted(async () => {
+
+  if(computed(() => store.getters.getLanguage).value === 'sk') {
+    const url = new URL(reactiveUrlRef.value);
+
+    url.searchParams.set('lang', 'sk');
+    reactiveUrlRef.value = url.toString();
+    store.dispatch('updateUrl', url.toString());
+  }
+
   authFailedRef.value = false;
   izusRef.value.addEventListener('load', () => {
     izusRef.value.contentWindow?.postMessage({ setCookie: true }, '*');
@@ -117,13 +126,6 @@ onIonViewWillEnter(() => {
   tipsLoadedRef.value = false;
 
   loginAttempt = 1;
-
-  if(computed(() => store.getters.getLanguage).value === 'sk') {
-    const url = new URL(reactiveUrlRef.value);
-
-    url.searchParams.set('lang', 'sk');
-    reactiveUrlRef.value = url.toString();
-  }
 
   if(reactiveUrlRef.value.includes(globals.logoutQuery)) {
     signOut();
@@ -215,6 +217,9 @@ const handleMessage = async (event: MessageEvent) => {
     await updateStatus(true, event.data.token, event.data.user_perm, event.data.nf_majetek);
     stopLoading();
   }
+  else if(event.data.status === '2fa') {
+    stopLoading();
+  }
   else if(event.data.status === 'error') {
     if(loginAttempt < 2) {
       updateUrl(globals.appUrl + globals.logoutQuery);
@@ -267,11 +272,18 @@ const updateStatus = async (value: boolean, authToken = '', userPerm = 0, nfInve
 }
 
 const updateUrl = (url: string) => {
-  reactiveUrlRef.value = url;
-  store.dispatch('updateUrl', url);
+
+  const urlObj = new URL(url);
+
+  if(computed(() => store.getters.getLanguage).value === 'sk') {
+    urlObj.searchParams.set('lang', 'sk');
+  }
+
+  reactiveUrlRef.value = urlObj.toString();
+  store.dispatch('updateUrl', url.toString());
   
   if(izusRef.value) {
-    izusRef.value.src = url;
+    izusRef.value.src = url.toString();
   }
 }
 

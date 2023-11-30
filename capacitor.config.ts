@@ -8,7 +8,11 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'http',
     url: 'https://m.izus.cz/'
+<<<<<<< HEAD
   },
+=======
+  }
+>>>>>>> main
 };
 
 export default config;
