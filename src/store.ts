@@ -16,6 +16,7 @@ export default createStore({
         userPerm: 0,
         nfInventory: 0,
         scannedCodes: JSON.parse(localStorage.getItem('scannedCodes') || '[]'),
+        variant: 'www',
     },
     mutations: {
         setUrl(state, url) {
@@ -63,6 +64,9 @@ export default createStore({
         setScannedCodes(state, scannedCodes) {
             state.scannedCodes = scannedCodes;
             localStorage.setItem('scannedCodes', JSON.stringify(scannedCodes));
+        },
+        setVariant(state, variant) {
+            state.variant = variant;
         }
     },
     actions: {
@@ -104,7 +108,10 @@ export default createStore({
         },
         updateScannedCodes({ commit }, scannedCodes) {
             commit('setScannedCodes', scannedCodes);
-        }
+        },
+        updateVariant({ commit }, variant) {
+            commit('setVariant', variant);
+        },
     },
     getters: {
         getUrl: state => state.url,
@@ -120,5 +127,6 @@ export default createStore({
         getUserPerm: state => state.userPerm,
         getNfInventory: state => state.nfInventory,
         getScannedCodes: state => state.scannedCodes,
+        getVariant: state => state.variant,
     }
 });

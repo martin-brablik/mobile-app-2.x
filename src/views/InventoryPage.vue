@@ -1,6 +1,6 @@
 <template>
     <ion-page>
-        <Toolbar :page-title="$tm('property_inventory').toString()" :display-menu-button="false" />
+        <Toolbar :page-title="$tm('property_inventory').toString()" :display-menu-button="true" />
         <audio preload="true" ref="beepSuccessRef" :src="beep1"></audio>
         <audio preload="true" ref="beepFailRef" :src="beep2"></audio>
         <ion-content id="window">
@@ -185,6 +185,7 @@ onIonViewWillEnter(async () => {
 });
 
 onIonViewWillLeave(() => {
+    signOutApi();
     alertLeave();
 });
 
@@ -218,6 +219,16 @@ const signInApi = async () => {
   const apiKey = await res.json();
 
   store.dispatch('updateAuthToken', apiKey.access_token);
+}
+
+const signOutApi = () => {
+    fetch(globals.appUrl + 'ws/api/logout', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + computed(() => store.getters.getAuthToken).value,
+    }
+  }).then(console.log).catch(console.error);
 }
 
 const prepare = async () => {
@@ -288,6 +299,8 @@ const startScan = async () => {
         }
     }
     catch (e) {
+        BarcodeScanner.showBackground();
+        document.querySelector('body')?.classList.remove('scanner-active');
         alertHeaderRef.value = tm('error');
         alertMessageRef.value = tm('error_processing_item');
         isAlertOpenRef.value = true;
@@ -304,9 +317,11 @@ const inventoryItem = async (code: Code, inventoryBatch = true): Promise<Code> =
     const authToken = computed(() => store.getters.getAuthToken).value;
     const req: RequestInit = {
         method: 'post',
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + authToken,
+            'Cookie': 'varianta=test; Domain=.izus.cz; Path=/; Secure; HttpOnly',
         },
         body: JSON.stringify({ "kody": [code.item], "inventarizovat-vsechny-kusy": inventoryBatch })
     }
@@ -317,6 +332,7 @@ const inventoryItem = async (code: Code, inventoryBatch = true): Promise<Code> =
         console.log(res.statusText);
         console.log(res.status);
         console.log(res.body);
+        console.log(res);
         throw res.status;
     }
 

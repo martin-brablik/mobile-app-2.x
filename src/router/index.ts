@@ -49,7 +49,7 @@ const routes: Array<RouteRecordRaw> = [
     path: '/inventory',
     component: InventoryPage,
     meta: {
-      hasMenu: false
+      hasMenu: true
     }
   },
   {

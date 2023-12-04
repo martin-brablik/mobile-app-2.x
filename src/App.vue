@@ -26,7 +26,7 @@ export default defineComponent({
     },
   },
   setup() {
-    const biometricsRef = ref<typeof Biometrics | null>(null);  
+    const biometricsRef = ref<typeof Biometrics | null>(null);
 
     onMounted(() => {
 

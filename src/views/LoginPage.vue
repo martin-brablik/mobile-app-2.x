@@ -32,7 +32,9 @@ import { useStore } from 'vuex';
 import bg_login from '@/assets/images/bg_login.png';
 import iZUS_pruhl from '@/assets/images/iZUS_pruhl.png';
 import izus_inverzni_podoba from '@/assets/images/izus_inverzni_podoba.png';
-import { computed, ref } from 'vue';
+import izus_vanoce from '@/assets/images/vanoce_izus.png';
+import izus_vanoce_inverzni from '@/assets/images/vanoce_izus_inverzni.png';
+import { Ref, computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { globals } from '@/globals';
@@ -47,7 +49,16 @@ const usernameRef = ref(computed(() => store.getters.getUsername).value);
 const passwordRef = ref(computed(() => store.getters.getPassword).value);
 const rememberCredentialsRef = ref(computed(() => store.getters.getUsername).value);
 const showPasswordRef = ref(false);
-const logoRef = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? izus_inverzni_podoba : iZUS_pruhl);
+let logoRef: Ref<string | undefined> = ref();
+
+onMounted(() => {
+  if(new Date().getMonth() == 11) {
+    logoRef = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? izus_vanoce_inverzni : izus_vanoce);
+  }
+  else {
+    logoRef = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? izus_inverzni_podoba : iZUS_pruhl);
+  }
+});
 
 onIonViewWillEnter(() => {
   usernameRef.value = computed(() => store.getters.getUsername).value;

@@ -3,7 +3,7 @@
             <ion-toolbar color="primary">
                 <ion-title>{{ pageTitle }}</ion-title>
                 <ion-buttons slot="start">
-                    <ion-button @click="back">
+                    <ion-button @click="back()">
                         <ion-icon :icon="arrowBack"></ion-icon>
                     </ion-button>
                 </ion-buttons>

@@ -47,6 +47,8 @@ import { useRoute } from 'vue-router';
 import { globals } from '@/globals';
 import iZUS_pruhl from '@/assets/images/iZUS_pruhl.png';
 import izus_inverzni_podoba from '@/assets/images/izus_inverzni_podoba.png';
+import izus_vanoce from '@/assets/images/vanoce_izus.png';
+import izus_vanoce_inverzni from '@/assets/images/vanoce_izus_inverzni.png';
 import wifi_off from '@/assets/images/wifi_off.svg';
 import { useI18n } from 'vue-i18n';
 import { Network } from '@capacitor/network'
@@ -83,9 +85,16 @@ const isLoadingPausedRef = ref(false);
 const ringRef : Ref<HTMLElement | undefined> = ref();
 const tipsLoadedRef = ref(false);
 const isOnlineRef = ref(true);
-const logoRef = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? izus_inverzni_podoba : iZUS_pruhl);
+let logoRef: Ref<string | undefined> = ref();
 
 onMounted(async () => {
+
+  if(new Date().getMonth() == 11) {
+    logoRef = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? izus_vanoce_inverzni : izus_vanoce);
+  }
+  else {
+    logoRef = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? izus_inverzni_podoba : iZUS_pruhl);
+  }
 
   if(computed(() => store.getters.getLanguage).value === 'sk') {
     const url = new URL(reactiveUrlRef.value);
@@ -198,13 +207,6 @@ const signIn = async () => {
 const signOut = (error: string = 'none') => {
   updateStatus(false);
   updateUrl(globals.appUrl + globals.logoutQuery);
-  fetch(globals.appUrl + 'ws/api/logout', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + computed(() => store.getters.getAuthToken).value,
-    }
-  }).then(console.log).catch(console.error);
   router.push({ name: 'login', params: { error: error } });
 };
 
@@ -214,6 +216,7 @@ const handleMessage = async (event: MessageEvent) => {
     await signIn();
   }
   else if(event.data.status === 'signed in') {
+    store.dispatch('updateVariant', event.data.variant ?? 'www');
     await updateStatus(true, event.data.token, event.data.user_perm, event.data.nf_majetek);
     stopLoading();
   }
