@@ -136,7 +136,8 @@ const biometry = ref<CheckBiometryResult>({
   isAvailable: false,
   biometryType: BiometryType.none,
   reason: '',
-  code: BiometryErrorType.none
+  code: BiometryErrorType.none,
+  biometryTypes: [BiometryType.none]
 });
 
 const options = reactive<AuthenticateOptions>({
