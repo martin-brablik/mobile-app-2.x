@@ -125,7 +125,7 @@ onMounted(async () => {
 });
 
 onIonViewWillEnter(() => {
-  ScreenOrientation.unlock();
+  //ScreenOrientation.unlock();
 
   reactiveUrlRef.value = computed(() => store.getters.getUrl).value;
   isSignedInRef. value = computed(() => store.getters.getIsSignedIn).value;
@@ -176,7 +176,7 @@ onIonViewDidEnter(async () => {
 });
 
 onIonViewWillLeave(() => {
-  ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
+  //ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
   store.dispatch('updateUrl', reactiveUrlRef.value);
   store.dispatch('updateIsSignedIn', isSignedInRef.value);
   izusRef.value.src = izusRef.value.src;
@@ -211,24 +211,19 @@ const signOut = (error: string = 'none') => {
 };
 
 const handleMessage = async (event: MessageEvent) => {
-  console.log(event.data);
   if(event.data.status === 'loaded' && !reactiveUrlRef.value.includes(globals.logoutQuery) && route.params.login == 'true' && !getStatus()) {
-    console.log('loaded');
     // Poslat požadavek na přihlášení pokud je přenačtena strana a nejde o odhlášení a uživatel se pokusil přihlásit a uživatel není přihlášen
     await signIn();
   }
   else if(event.data.status === 'signed in') {
-    console.log('signed in');
     store.dispatch('updateVariant', event.data.variant ?? 'www');
     await updateStatus(true, event.data.token, event.data.user_perm, event.data.nf_majetek);
     stopLoading();
   }
   else if(event.data.status === '2fa') {
-    console.log('2fa');
     stopLoading();
   }
   else if(event.data.status === 'error') {
-    console.log('error');
     if(loginAttempt < 2) {
       updateUrl(globals.appUrl + globals.logoutQuery);
       loginAttempt++;

@@ -30,7 +30,7 @@ export default defineComponent({
 
     onMounted(() => {
 
-      ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
+      //ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
 
       if(biometricsRef.value !== null) {
         biometricsRef.value.openBiometry();
