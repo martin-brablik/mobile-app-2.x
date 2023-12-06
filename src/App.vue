@@ -14,7 +14,7 @@ import { App } from '@capacitor/app';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 import Biometrics from '@/components/Biometrics.vue';
 import Menu from '@/components/Menu.vue';
-import { ScreenOrientation } from '@awesome-cordova-plugins/screen-orientation';
+//import { ScreenOrientation } from '@awesome-cordova-plugins/screen-orientation';
 import router from './router';
 
 export default defineComponent({
@@ -30,7 +30,7 @@ export default defineComponent({
 
     onMounted(() => {
 
-      ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
+      //ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
 
       if(biometricsRef.value !== null) {
         biometricsRef.value.openBiometry();

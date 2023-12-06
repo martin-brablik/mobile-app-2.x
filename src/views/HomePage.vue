@@ -42,7 +42,7 @@ import { caretDown, refresh } from 'ionicons/icons';
 import { Ref, ref, onMounted, computed } from 'vue';
 import { App } from '@capacitor/app';
 import store from '@/store';
-import { ScreenOrientation } from '@awesome-cordova-plugins/screen-orientation';
+//import { ScreenOrientation } from '@awesome-cordova-plugins/screen-orientation';
 import { useRoute } from 'vue-router';
 import { globals } from '@/globals';
 import iZUS_pruhl from '@/assets/images/iZUS_pruhl.png';
@@ -125,7 +125,7 @@ onMounted(async () => {
 });
 
 onIonViewWillEnter(() => {
-  ScreenOrientation.unlock();
+  //ScreenOrientation.unlock();
 
   reactiveUrlRef.value = computed(() => store.getters.getUrl).value;
   isSignedInRef. value = computed(() => store.getters.getIsSignedIn).value;
@@ -176,7 +176,7 @@ onIonViewDidEnter(async () => {
 });
 
 onIonViewWillLeave(() => {
-  ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
+  //ScreenOrientation.lock(ScreenOrientation.ORIENTATIONS.PORTRAIT);
   store.dispatch('updateUrl', reactiveUrlRef.value);
   store.dispatch('updateIsSignedIn', isSignedInRef.value);
   izusRef.value.src = izusRef.value.src;
