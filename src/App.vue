@@ -12,9 +12,9 @@ import { IonApp, IonRouterOutlet } from '@ionic/vue';
 import { computed, defineComponent, onBeforeUnmount, onMounted, ref } from 'vue';
 import { App } from '@capacitor/app';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
+import { ScreenOrientation } from '@awesome-cordova-plugins/screen-orientation';
 import Biometrics from '@/components/Biometrics.vue';
 import Menu from '@/components/Menu.vue';
-import { ScreenOrientation } from '@awesome-cordova-plugins/screen-orientation';
 import router from './router';
 
 export default defineComponent({
